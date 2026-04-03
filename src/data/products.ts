@@ -1,0 +1,174 @@
+export const mockProducts = [
+  // Кальяны
+  {
+    id: '1',
+    name: 'Кальян Alpha Hookah Model X',
+    price: 15900,
+    image: '/img/Кальян Alpha Hookah Model X.jpeg',
+    category: 'Кальяны',
+    description: 'Премиальный кальян с уникальным дизайном',
+    inStock: true,
+    brand: 'Alpha Hookah',
+    volume: 'Средний'
+    
+  },
+  {
+    id: '2',
+    name: 'Кальян SoftSmoke Glass',
+    price: 12400,
+    image: '/img/Кальян Vapor Smoky Glass.jpeg',
+    category: 'Кальяны',
+    description: 'Стеклянный кальян с прозрачной колбой',
+    inStock: true,
+    brand: 'SoftSmoke',
+    volume: 'Большой'
+  },
+
+  // Табак
+  {
+    id: '3',
+    name: 'Табак Adalya Double Apple',
+    price: 890,
+    image: '/img/Табак Adalya Double Apple.jpeg',
+    category: 'Табак',
+    description: 'Классический вкус двойного яблока',
+    inStock: true,
+    brand: 'Adalya',
+    volume: '50г',
+    strength: 'Средняя'
+  },
+  {
+    id: '4',
+    name: 'Табак Darkside Medium Generis Banana',
+    price: 1250,
+    image: '/img/Табак Darkside Medium Generis Banana.jpeg',
+    category: 'Табак',
+    description: 'Насыщенный банановый вкус',
+    inStock: true,
+    brand: 'Darkside',
+    volume: '30г',
+    strength: 'Средняя'
+  },
+
+  // Бестабачные смеси
+  {
+    id: '5',
+    name: 'БКС с ароматом Blackberry',
+    price: 650,
+    image: '/img/Смесь Tea Mix Earl Grey.jpeg',
+    category: 'Бестабачные смеси',
+    description: 'Бестабачная смесь со вкусом ежевики',
+    inStock: true,
+    brand: 'MustHave',
+    volume: '50г',
+    strength: 'Высокая'
+  },
+  {
+    id: '6',
+    name: 'БКС: Тропический смузи',
+    price: 720,
+    image: '/img/Смесь Fruit Mix Tropical.jpeg',
+    category: 'Бестабачные смеси',
+    description: 'Бестабачная смесь с тропическими фруктами',
+    inStock: true,
+    brand: 'Brusko',
+    volume: '50г',
+    strength: 'Средняя'
+  },
+
+  // Электронные сигареты
+  {
+    id: '7',
+    name: 'Split S Банан',
+    price: 450,
+    image: '/img/JUUL Pod Mint.jpeg',
+    category: 'Электронные сигареты',
+    description: 'Одноразовая электронная сигарета со вкусом банана',
+    inStock: true,
+    brand: 'Brusko&LANAVAPE',
+    volume: '1.5мл'
+  },
+  {
+    id: '8',
+    name: 'Split L 5000 Арбуз',
+    price: 590,
+    image: '/img/IQOS Heets Amber.jpeg',
+    category: 'Электронные сигареты',
+    description: 'Одноразовая электронная сигарета со вкусом арбуза',
+    inStock: true,
+    brand: 'Brusko&LANAVAPE',
+    volume: '4.5мл'
+  },
+
+  // Аксессуары
+  {
+    id: '9',
+    name: 'Щипцы для угля',
+    price: 890,
+    image: '/img/Щипцы для угля Premium.jpeg',
+    category: 'Аксессуары',
+    description: 'Качественные щипцы из нержавеющей стали',
+    inStock: true,
+    brand: 'Hornet'
+  },
+  {
+    id: '10',
+    name: 'Уголь кокосовый Cocoloco 25мм',
+    price: 1200,
+    image: '/img/Уголь кокосовый Tom Coco Gold.jpeg',
+    category: 'Аксессуары',
+    description: 'Натуральный кокосовый уголь премиум качества',
+    inStock: true,
+    brand: 'Cocoloco',
+    volume: '300гр'
+  },
+
+  // Дополнительные товары для каталога
+  {
+    id: '11',
+    name: 'Кальян Hoob Atom',
+    price: 8900,
+    image: '/img/Кальян Hoob Atom.jpeg',
+    category: 'Кальяны',
+    description: 'Компактный дорожный кальян',
+    inStock: true,
+    brand: 'Hoob',
+    volume: 'Малый'
+  },
+  {
+    id: '12',
+    name: 'Табак для кальяна Tropic Jack',
+    price: 950,
+    image: '/img/Табак Serbetli Ice Lemon.jpeg',
+    category: 'Табак',
+    description: 'Табак с ароматом Спелый Джекфрут',
+    inStock: true,
+    brand: 'BlackBurn',
+    volume: '35г',
+    strength: 'Средняя'
+  }
+];
+
+export const categories = [
+  'Все товары',
+  'Кальяны', 
+  'Табак',
+  'Бестабачные смеси',
+  'Электронные сигареты',
+  'Аксессуары'
+];
+
+export const brands = [
+  'Все бренды',
+  'Alpha Hookah',
+  'BlackBurn',
+  'Adalya',
+  'Darkside',
+  'Hoob',
+  'Cocoloco',
+  'Brusko&LANAVAPE',
+  'Hornet',
+  'Brusko',
+  'SoftSmoke',
+  'MustHave'
+];

@@ -1,0 +1,158 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isManager() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isManagerUser(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role == 'manager' ||
+        get(/databases/$(database)/documents/users/$(userId)).data.role == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidProduct() {
+      return request.resource.data.name is string 
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.price is number
+        && request.resource.data.price >= 0
+        && request.resource.data.category is string;
+    }
+    
+    function isValidOrder() {
+      return request.resource.data.orderData is map
+        && request.resource.data.orderData.email is string
+        && request.resource.data.orderData.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$')
+        && request.resource.data.orderData.phone is string
+        && request.resource.data.totalPrice is number
+        && request.resource.data.totalPrice >= 0
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0;
+    }
+    
+    // Products collection
+    match /products/{productId} {
+      allow read: if true;  // Anyone can read products
+      allow create, update: if isAdmin() && isValidProduct();
+      allow delete: if isAdmin();
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (
+        isOwner(userId) ||
+        isAdmin() ||
+        resource.data.role == 'manager' ||
+        resource.data.role == 'admin'
+      );
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // App config (public readable for authenticated, writable by admin)
+    match /appConfig/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // Orders collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || 
+        resource.data.orderData.userId == request.auth.uid
+      );
+      allow create: if isAuthenticated() && isValidOrder();
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (resource.data.orderData.userId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+      );
+      allow delete: if isAdmin();
+    }
+    
+    // Chat messages collection
+    match /chatMessages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() 
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 1000
+        && (
+          request.resource.data.text.size() > 0 ||
+          (request.resource.data.attachments is list && request.resource.data.attachments.size() > 0)
+        );
+      allow update, delete: if isAdmin();
+    }
+
+    function isThreadParticipant(threadId) {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
+    }
+
+    // Private user-manager threads
+    match /chatThreads/{threadId} {
+      allow read: if isThreadParticipant(threadId) || isAdmin();
+
+      allow create: if isAuthenticated()
+        && request.resource.data.type == 'user-manager'
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.participantIds is list
+        && request.resource.data.participantIds.size() == 2
+        && request.resource.data.participantIds.hasAll([request.auth.uid])
+        && request.resource.data.participantIds.hasAll([request.resource.data.userId])
+        && (
+          (
+            request.resource.data.participantIds[0] == request.resource.data.userId &&
+            isManagerUser(request.resource.data.participantIds[1])
+          ) ||
+          (
+            request.resource.data.participantIds[1] == request.resource.data.userId &&
+            isManagerUser(request.resource.data.participantIds[0])
+          )
+        );
+
+      allow update: if isThreadParticipant(threadId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
+
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isThreadParticipant(threadId) || isAdmin();
+        allow create: if isThreadParticipant(threadId)
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 1000
+          && (
+            request.resource.data.text.size() > 0 ||
+            (request.resource.data.attachments is list && request.resource.data.attachments.size() > 0)
+          );
+        allow update, delete: if isAdmin();
+      }
+    }
+    
+    // Chat rooms collection
+    match /chatRooms/{roomId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
