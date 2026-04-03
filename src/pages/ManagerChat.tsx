@@ -58,9 +58,13 @@ const ManagerChat: React.FC = () => {
       })
       .catch((error) => {
         console.error('Error loading manager threads:', error);
+        const errMsg =
+          (error && typeof error === 'object' && 'code' in error && (error as any).code)
+            ? `${(error as any).code}: ${(error as any).message || ''}`
+            : (error as any)?.message || String(error);
         toast({
           title: 'Ошибка',
-          description: 'Не удалось загрузить диалоги. Проверьте права доступа Firestore.',
+          description: `Не удалось загрузить диалоги. ${errMsg}`,
           variant: 'destructive',
         });
         setChatUsers([]);

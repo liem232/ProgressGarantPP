@@ -110,7 +110,7 @@ const Checkout: React.FC = () => {
         description: `Заказ №${order.id.slice(-6)} успешно создан. Мы свяжемся с вами в ближайшее время.`,
       });
 
-      navigate('/profile?tab=orders');
+      navigate('/orders');
     } catch (error) {
       console.error('Ошибка:', error);
       toast({

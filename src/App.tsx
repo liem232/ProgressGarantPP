@@ -20,6 +20,7 @@ import Contacts from "./pages/Contacts";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import Orders from "./pages/Orders";
 import Admin from "./pages/Admin";
 import ManagerChat from "./pages/ManagerChat";
 import AdminChat from "./pages/AdminChat";
@@ -50,6 +51,7 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/orders" element={<Orders />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/manager/chat" element={<ManagerChat />} />
                   <Route path="/admin/chat" element={<AdminChat />} />

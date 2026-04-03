@@ -90,24 +90,23 @@ export const getOrders = async (userId?: string): Promise<Order[]> => {
     // Fallback to localStorage
     const orders = getLocalOrders();
     if (userId) {
-      return orders.filter(o => o.orderData.userId === userId);
+      return orders
+        .filter(o => o.orderData.userId === userId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
     return orders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
   let q;
   if (userId) {
-    q = query(
-      ordersCollection,
-      where('orderData.userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
+    // Avoid requiring a composite index (where + orderBy) by sorting on the client.
+    q = query(ordersCollection, where('orderData.userId', '==', userId));
   } else {
     q = query(ordersCollection, orderBy('createdAt', 'desc'));
   }
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docSnap => {
+  const results = snapshot.docs.map(docSnap => {
     const data = docSnap.data() as DocumentData;
     return {
       id: docSnap.id,
@@ -119,6 +118,12 @@ export const getOrders = async (userId?: string): Promise<Order[]> => {
       status: data.status || 'pending',
       createdAt: data.createdAt,
     } as Order;
+  });
+
+  return results.sort((a, b) => {
+    const aTime = (a.createdAt?.toMillis?.() ?? new Date(a.date).getTime());
+    const bTime = (b.createdAt?.toMillis?.() ?? new Date(b.date).getTime());
+    return bTime - aTime;
   });
 };
 
