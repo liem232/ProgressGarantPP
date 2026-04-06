@@ -9,17 +9,13 @@ import {
   X, 
   Send, 
   Minimize2, 
-  Maximize2,
-  ChevronDown,
   User,
   HeadphonesIcon,
   Paperclip,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { firebaseApp } from '@/lib/firebase';
 import {
-  sendMessage,
-  getMessages,
-  subscribeToMessages,
   uploadFile,
   ChatMessage,
   ChatAttachment,
@@ -28,6 +24,7 @@ import {
   subscribeToThreadMessages,
   ChatThread,
   getChatConfig,
+  getAvailableManagers,
 } from '@/services/chatService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,8 +33,6 @@ const ChatWidget: React.FC = () => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [chatMode, setChatMode] = useState<'public' | 'private'>('private');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -63,8 +58,16 @@ const ChatWidget: React.FC = () => {
         const cfg = await getChatConfig();
         if (cfg.defaultManagerId) {
           setManagerId(cfg.defaultManagerId);
+          setThreadError(null);
         } else {
-          setThreadError('Не настроен менеджер для чата');
+          // Fallback: try to find an available manager in users collection.
+          const managers = await getAvailableManagers();
+          if (managers.length > 0) {
+            setManagerId(managers[0].id);
+            setThreadError(null);
+          } else {
+            setThreadError('Не настроен менеджер для чата');
+          }
         }
       } catch (error) {
         toast({
@@ -81,13 +84,14 @@ const ChatWidget: React.FC = () => {
 
   // Initialize or get private thread for user-manager chat
   useEffect(() => {
-    if (!isAuthenticated || !user || isManager || chatMode !== 'private' || !managerId) return;
+    if (!isAuthenticated || !user || isManager || !managerId) return;
 
     const initThread = async () => {
       setIsThreadLoading(true);
       setThreadError(null);
       try {
-        const thread = await getOrCreateUserManagerThread(user.id, managerId);
+        const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username;
+        const thread = await getOrCreateUserManagerThread(user.id, managerId, displayName, user.email);
         if (thread) {
           setPrivateThread(thread);
         } else {
@@ -95,14 +99,20 @@ const ChatWidget: React.FC = () => {
         }
       } catch (error) {
         console.error('Error initializing thread:', error);
-        setThreadError('Ошибка при создании чата');
+        const errMsg =
+          (error && typeof error === 'object' && 'code' in error && (error as any).code)
+            ? `${(error as any).code}: ${(error as any).message || ''}`
+            : (error as any)?.message || String(error);
+        const projectId = (firebaseApp as any)?.options?.projectId || 'unknown-project';
+        setThreadError(`Ошибка при создании чата: ${errMsg} (projectId=${projectId}, uid=${user?.id || 'no-user'})`);
       } finally {
         setIsThreadLoading(false);
       }
     };
     initThread();
-  }, [isAuthenticated, user, isManager, chatMode, managerId]);
-  // Subscribe to messages based on chat mode
+  }, [isAuthenticated, user, isManager, managerId]);
+
+  // Subscribe to private thread messages
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
@@ -110,32 +120,7 @@ const ChatWidget: React.FC = () => {
 
     messagesLengthRef.current = 0;
 
-    if (chatMode === 'public') {
-      // Public chat - use existing collection
-      getMessages().then((msgs) => {
-        setMessages(msgs);
-        messagesLengthRef.current = msgs.length;
-        const lastMsg = msgs[msgs.length - 1];
-        if (lastMsg && lastMsg.senderId !== user.id && !isOpen) {
-          setHasUnread(true);
-        }
-      });
-
-      unsubscribe = subscribeToMessages((newMessages) => {
-        setMessages(newMessages);
-
-        const previousLength = messagesLengthRef.current;
-        messagesLengthRef.current = newMessages.length;
-
-        if (newMessages.length > previousLength && !isOpenRef.current) {
-          const lastMsg = newMessages[newMessages.length - 1];
-          if (lastMsg.senderId !== user.id) {
-            setHasUnread(true);
-          }
-        }
-      });
-    } else if (chatMode === 'private' && privateThread) {
-      // Private thread - use new thread-based API
+    if (privateThread) {
       unsubscribe = subscribeToThreadMessages(privateThread.id, (newMessages) => {
         setMessages(newMessages);
 
@@ -154,7 +139,7 @@ const ChatWidget: React.FC = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user, isAuthenticated, chatMode, privateThread]);
+  }, [user, isAuthenticated, privateThread]);
 
   useEffect(() => {
     isOpenRef.current = isOpen;
@@ -192,6 +177,14 @@ const ChatWidget: React.FC = () => {
 
   const handleSend = async () => {
     if (!user || (!inputText.trim() && attachments.length === 0)) return;
+    if (!privateThread) {
+      toast({
+        title: 'Чат не готов',
+        description: 'Подождите, пока создастся диалог с менеджером',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -201,29 +194,17 @@ const ChatWidget: React.FC = () => {
         if (attachment) uploadedAttachments.push(attachment);
       }
 
-      if (chatMode === 'public') {
-        // Send to public chat
-        await sendMessage(
-          inputText.trim(),
-          user.id,
-          `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
-          user.role,
-          uploadedAttachments
-        );
-      } else if (chatMode === 'private' && privateThread) {
-        // Send to private thread
-        await sendThreadMessage(
-          privateThread.id,
-          inputText.trim(),
-          user.id,
-          `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
-          user.role,
-          uploadedAttachments
-        );
-      }
+      await sendThreadMessage(
+        privateThread.id,
+        inputText.trim(),
+        user.id,
+        `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+        user.role,
+        uploadedAttachments
+      );
+
       setInputText('');
       setAttachments([]);
-      inputRef.current?.focus();
     } catch (error) {
       toast({
         title: 'Ошибка',
@@ -269,11 +250,7 @@ const ChatWidget: React.FC = () => {
       {/* Chat Window */}
       {isOpen && (
         <div 
-          className={`fixed z-50 transition-all duration-300 ease-in-out ${
-            isExpanded 
-              ? 'inset-0 sm:inset-4 md:inset-8 lg:inset-16' 
-              : 'bottom-0 left-0 right-0 sm:bottom-6 sm:right-6 sm:left-auto sm:w-[420px] md:w-[480px] lg:w-[520px]'
-          }`}
+          className="fixed z-50 transition-all duration-300 ease-in-out bottom-0 left-0 right-0 sm:bottom-6 sm:right-6 sm:left-auto sm:w-[420px] md:w-[480px] lg:w-[520px]"
         >
           <Card className="h-full sm:h-[600px] md:h-[650px] lg:h-[700px] shadow-2xl border-0 flex flex-col overflow-hidden">
             {/* Header */}
@@ -285,33 +262,11 @@ const ChatWidget: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">
-                      {chatMode === 'public' ? 'Общий чат' : 'Чат с менеджером'}
+                      Чат с менеджером
                     </span>
                     <Badge variant="secondary" className="text-xs bg-green-500 text-white border-0">
                       Онлайн
                     </Badge>
-                  </div>
-                  <div className="flex gap-2 mt-1">
-                    <button
-                      onClick={() => setChatMode('private')}
-                      className={`text-xs px-2 py-0.5 rounded ${
-                        chatMode === 'private'
-                          ? 'bg-white/20 text-white'
-                          : 'text-primary-foreground/70 hover:text-white'
-                      }`}
-                    >
-                      Личный
-                    </button>
-                    <button
-                      onClick={() => setChatMode('public')}
-                      className={`text-xs px-2 py-0.5 rounded ${
-                        chatMode === 'public'
-                          ? 'bg-white/20 text-white'
-                          : 'text-primary-foreground/70 hover:text-white'
-                      }`}
-                    >
-                      Общий
-                    </button>
                   </div>
                 </div>
               </div>
@@ -333,16 +288,7 @@ const ChatWidget: React.FC = () => {
                 >
                   <Minimize2 className="h-4 w-4" />
                 </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden lg:flex h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                >
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-                
+
                 <Button
                   variant="ghost"
                   size="icon"
@@ -371,12 +317,6 @@ const ChatWidget: React.FC = () => {
                         <X className="h-6 w-6 text-red-500" />
                       </div>
                       <p className="text-red-600 font-medium mb-1">{threadError}</p>
-                      <button
-                        onClick={() => setChatMode('public')}
-                        className="text-sm text-primary hover:underline mt-2"
-                      >
-                        Переключиться в общий чат
-                      </button>
                     </div>
                   )}
                   

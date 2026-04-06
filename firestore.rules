@@ -6,22 +6,28 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function userDocPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function getUserRole(uid) {
+      return exists(userDocPath(uid)) ? get(userDocPath(uid)).data.role : null;
+    }
     
     function isAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() && getUserRole(request.auth.uid) == 'admin';
     }
 
     function isManager() {
       return isAuthenticated() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        getUserRole(request.auth.uid) == 'manager' ||
+        getUserRole(request.auth.uid) == 'admin'
       );
     }
 
     function isManagerUser(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role == 'manager' ||
-        get(/databases/$(database)/documents/users/$(userId)).data.role == 'admin';
+      return getUserRole(userId) == 'manager' || getUserRole(userId) == 'admin';
     }
     
     function isOwner(userId) {
@@ -91,21 +97,16 @@ service cloud.firestore {
     
     // Chat messages collection
     match /chatMessages/{messageId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() 
-        && request.resource.data.senderId == request.auth.uid
-        && request.resource.data.text is string
-        && request.resource.data.text.size() <= 1000
-        && (
-          request.resource.data.text.size() > 0 ||
-          (request.resource.data.attachments is list && request.resource.data.attachments.size() > 0)
-        );
-      allow update, delete: if isAdmin();
+      allow read, create, update, delete: if false;
     }
 
     // For thread document rules, use `resource.data` to avoid recursive reads.
     function isThreadDocParticipant() {
       return isAuthenticated() && resource.data.participantIds.hasAny([request.auth.uid]);
+    }
+
+    function isDeterministicThreadOwner(threadId) {
+      return isAuthenticated() && threadId.matches('^' + request.auth.uid + '_.*$');
     }
 
     // For subcollection rules (messages), we must look up the parent thread.
@@ -116,27 +117,11 @@ service cloud.firestore {
 
     // Private user-manager threads
     match /chatThreads/{threadId} {
-      allow read: if isThreadDocParticipant() || isManager() || isAdmin();
+      allow read: if isAdmin() || isManager() || (exists(/databases/$(database)/documents/chatThreads/$(threadId)) && isThreadDocParticipant()) || isDeterministicThreadOwner(threadId);
 
-      allow create: if isAuthenticated()
-        && request.resource.data.type == 'user-manager'
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.participantIds is list
-        && request.resource.data.participantIds.size() == 2
-        && request.resource.data.participantIds.hasAll([request.auth.uid])
-        && request.resource.data.participantIds.hasAll([request.resource.data.userId])
-        && (
-          (
-            request.resource.data.participantIds[0] == request.resource.data.userId &&
-            isManagerUser(request.resource.data.participantIds[1])
-          ) ||
-          (
-            request.resource.data.participantIds[1] == request.resource.data.userId &&
-            isManagerUser(request.resource.data.participantIds[0])
-          )
-        );
+      allow create: if isAuthenticated();
 
-      allow update: if isThreadDocParticipant() &&
+      allow update: if exists(/databases/$(database)/documents/chatThreads/$(threadId)) && isThreadDocParticipant() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
 
       allow delete: if isAdmin();

@@ -55,6 +55,8 @@ export interface ChatThread {
   type: 'user-manager';
   participantIds: string[];
   userId: string;
+  userName?: string;
+  userEmail?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   lastMessage?: {
@@ -352,9 +354,13 @@ const getThreadMessagesCollection = (threadId: string) => {
 
 export const getOrCreateUserManagerThread = async (
   userId: string,
-  managerId: string
+  managerId: string,
+  userName?: string,
+  userEmail?: string
 ): Promise<ChatThread | null> => {
   if (!userId || !managerId) return null;
+
+  const deterministicThreadId = `${userId}_${managerId}`;
 
   if (!isFirebaseConfigured || !threadsCollection || !db) {
     const existing = localThreads.find(
@@ -364,10 +370,12 @@ export const getOrCreateUserManagerThread = async (
 
     const now = Timestamp.now();
     const thread: ChatThread = {
-      id: `${userId}_${managerId}`,
+      id: deterministicThreadId,
       type: 'user-manager',
       participantIds: [userId, managerId],
       userId,
+      userName,
+      userEmail,
       createdAt: now,
       updatedAt: now,
     };
@@ -375,21 +383,35 @@ export const getOrCreateUserManagerThread = async (
     return thread;
   }
 
-  const q = query(
-    threadsCollection,
-    where('type', '==', 'user-manager'),
-    where('userId', '==', userId),
-    where('participantIds', 'array-contains', managerId)
-  );
-  const snapshot = await getDocs(q);
-  if (!snapshot.empty) {
-    const docSnap = snapshot.docs[0];
-    const data = docSnap.data() as DocumentData;
+  // Avoid Firestore composite index requirements by using a deterministic doc id.
+  // This guarantees there is at most one thread per (userId, managerId).
+  const threadRef = doc(db, THREADS_COLLECTION, deterministicThreadId);
+  const existingSnap = await getDoc(threadRef);
+  if (existingSnap.exists()) {
+    const data = existingSnap.data() as DocumentData;
+
+    // Backfill display fields for staff UI if the thread already exists.
+    // Do this best-effort; ignore failures to avoid breaking chat.
+    if ((userName || userEmail) && (!data.userName || !data.userEmail)) {
+      const patch: Record<string, any> = {};
+      if (userName && !data.userName) patch.userName = userName;
+      if (userEmail && !data.userEmail) patch.userEmail = userEmail;
+      if (Object.keys(patch).length > 0) {
+        try {
+          await updateDoc(threadRef, patch);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     return {
-      id: docSnap.id,
+      id: existingSnap.id,
       type: data.type,
       participantIds: data.participantIds || [],
       userId: data.userId,
+      userName: typeof data.userName === 'string' ? data.userName : undefined,
+      userEmail: typeof data.userEmail === 'string' ? data.userEmail : undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
       lastMessage: data.lastMessage || undefined,
@@ -400,23 +422,28 @@ export const getOrCreateUserManagerThread = async (
     type: 'user-manager' as const,
     participantIds: [userId, managerId],
     userId,
+    userName: userName || null,
+    userEmail: userEmail || null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     lastMessage: null,
   };
 
-  const created = await addDoc(threadsCollection, threadData);
-  const createdSnap = await getDoc(created);
-  const data = createdSnap.data() as DocumentData;
+  await setDoc(threadRef, threadData);
 
+  // Do not depend on serverTimestamp() materialization for UI readiness.
+  // Return a usable thread object immediately.
+  const now = Timestamp.now();
   return {
-    id: created.id,
-    type: data.type,
-    participantIds: data.participantIds || [],
-    userId: data.userId,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-    lastMessage: data.lastMessage || undefined,
+    id: deterministicThreadId,
+    type: 'user-manager',
+    participantIds: [userId, managerId],
+    userId,
+    userName,
+    userEmail,
+    createdAt: now,
+    updatedAt: now,
+    lastMessage: undefined,
   } as ChatThread;
 };
 
@@ -445,6 +472,8 @@ export const listUserManagerThreadsForStaff = async (participantId?: string): Pr
           type: data.type,
           participantIds: data.participantIds || [],
           userId: data.userId,
+          userName: typeof data.userName === 'string' ? data.userName : undefined,
+          userEmail: typeof data.userEmail === 'string' ? data.userEmail : undefined,
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
           lastMessage: data.lastMessage || undefined,
@@ -458,18 +487,21 @@ export const listUserManagerThreadsForStaff = async (participantId?: string): Pr
   // Admin use-case: list all threads.
   const q = query(threadsCollection, where('type', '==', 'user-manager'), orderBy('updatedAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((docSnap) => {
+  const threads = snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as DocumentData;
     return {
       id: docSnap.id,
       type: data.type,
       participantIds: data.participantIds || [],
       userId: data.userId,
+      userName: typeof data.userName === 'string' ? data.userName : undefined,
+      userEmail: typeof data.userEmail === 'string' ? data.userEmail : undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
       lastMessage: data.lastMessage || undefined,
     } as ChatThread;
   });
+  return threads;
 };
 
 export const sendThreadMessage = async (

@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { seedProducts } from '@/services/seedService';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
-import Chat from '@/components/Chat';
 import AdminProducts from '@/components/AdminProducts';
 
 interface AdminUser {
@@ -122,12 +121,11 @@ const Admin: React.FC = () => {
         <h1 className="text-3xl font-bold text-foreground mb-8">Админ-панель</h1>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Обзор</TabsTrigger>
             <TabsTrigger value="orders">Заказы ({orders.length})</TabsTrigger>
             <TabsTrigger value="products">Товары</TabsTrigger>
             <TabsTrigger value="users">Пользователи ({users.length})</TabsTrigger>
-            <TabsTrigger value="chat">Чат</TabsTrigger>
             <TabsTrigger value="news">Новости</TabsTrigger>
           </TabsList>
 
@@ -351,10 +349,6 @@ const Admin: React.FC = () => {
                 </div>
               )}
             </div>
-          </TabsContent>
-
-          <TabsContent value="chat" className="mt-6">
-            <Chat roomName="Чат сотрудников" />
           </TabsContent>
 
           <TabsContent value="news" className="mt-6">

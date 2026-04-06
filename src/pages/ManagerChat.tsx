@@ -100,9 +100,15 @@ const ManagerChat: React.FC = () => {
           ? new Date(t.lastMessage.timestamp as any)
           : undefined;
 
+      const displayName =
+        t.userName ||
+        t.userEmail ||
+        (t.lastMessage?.senderRole === 'user' ? t.lastMessage.senderName : undefined) ||
+        t.userId;
+
       return {
         id: t.id,
-        name: t.userId,
+        name: displayName,
         role: 'user-manager',
         lastMessage: t.lastMessage?.text,
         lastMessageTime: lastMsgTs,
@@ -230,7 +236,7 @@ const ManagerChat: React.FC = () => {
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>
-                          {chatUser.name.slice(0, 2).toUpperCase()}
+                          {(chatUser.name || 'U').slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
