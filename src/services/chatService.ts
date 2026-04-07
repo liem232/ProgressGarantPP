@@ -601,6 +601,38 @@ export const listStaffThreadsForAdmin = async (adminId: string): Promise<ChatThr
   return threads.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
 };
 
+export const listStaffThreadsForStaff = async (participantId: string): Promise<ChatThread[]> => {
+  if (!participantId) return [];
+
+  if (!isFirebaseConfigured || !threadsCollection || !db) {
+    return localThreads
+      .filter((t) => t.type === 'staff' && t.participantIds.includes(participantId))
+      .sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
+  }
+
+  const q = query(
+    threadsCollection,
+    where('type', '==', 'staff'),
+    where('participantIds', 'array-contains', participantId)
+  );
+  const snapshot = await getDocs(q);
+  const threads = snapshot.docs.map((docSnap) => {
+    const data = docSnap.data() as DocumentData;
+    return {
+      id: docSnap.id,
+      type: data.type,
+      participantIds: data.participantIds || [],
+      userId: data.userId,
+      userName: typeof data.userName === 'string' ? data.userName : undefined,
+      userEmail: typeof data.userEmail === 'string' ? data.userEmail : undefined,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      lastMessage: data.lastMessage || undefined,
+    } as ChatThread;
+  });
+  return threads.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
+};
+
 export const sendThreadMessage = async (
   threadId: string,
   text: string,

@@ -26,7 +26,8 @@ interface ChatUser {
   id: string;
   name: string;
   role: 'user' | 'manager' | 'admin';
-  type: 'client' | 'staff';
+  category: 'clients' | 'managers';
+  counterpartId?: string;
   lastMessage?: string;
   lastMessageTime?: Date;
   unreadCount: number;
@@ -75,6 +76,16 @@ const AdminChat: React.FC = () => {
     }
   }, [isAdmin, user?.id]);
 
+  useEffect(() => {
+    if (!isAdmin || !user?.id) return;
+    if (managers.length === 0) return;
+
+    // Rebuild staff list to replace UID placeholders with manager names.
+    listStaffThreadsForAdmin(user.id).then((staffThreads) => {
+      buildUserList(staffThreads, 'managers');
+    });
+  }, [isAdmin, user?.id, managers]);
+
   // Subscribe to messages for selected thread
   useEffect(() => {
     if (!isAdmin || !selectedUserId) {
@@ -96,7 +107,7 @@ const AdminChat: React.FC = () => {
     }
   }, [messages, selectedUserId]);
 
-  const buildUserList = (allThreads: ChatThread[], type: 'clients' | 'managers') => {
+  const buildUserList = (allThreads: ChatThread[], category: 'clients' | 'managers') => {
     const users = allThreads.map((t) => {
       const lastMsgTs = t.lastMessage?.timestamp && typeof t.lastMessage.timestamp === 'object' && 'toDate' in t.lastMessage.timestamp
         ? (t.lastMessage.timestamp as any).toDate()
@@ -105,15 +116,20 @@ const AdminChat: React.FC = () => {
           : undefined;
 
       const isStaffThread = t.type === 'staff';
+      const counterpartId = isStaffThread
+        ? t.participantIds.find((id) => id !== user?.id)
+        : undefined;
+
       const displayName = isStaffThread
-        ? (t.participantIds.find(id => id !== user?.id) || 'Менеджер')
+        ? (managers.find((m) => m.id === counterpartId)?.name || 'Менеджер')
         : (t.userName || t.userEmail || t.userId);
 
       return {
         id: t.id,
         name: displayName,
         role: isStaffThread ? 'manager' : 'user',
-        type: type,
+        category,
+        counterpartId,
         lastMessage: t.lastMessage?.text,
         lastMessageTime: lastMsgTs,
         unreadCount: 0,
@@ -121,7 +137,7 @@ const AdminChat: React.FC = () => {
     });
 
     setChatUsers((prev) => {
-      const otherTypeUsers = prev.filter((u) => u.type !== type);
+      const otherTypeUsers = prev.filter((u) => u.category !== category);
       return [...otherTypeUsers, ...users].sort((a, b) => {
         if (!a.lastMessageTime) return 1;
         if (!b.lastMessageTime) return -1;
@@ -286,13 +302,13 @@ const AdminChat: React.FC = () => {
                 <div className="space-y-1 p-4">
                   {activeTab === 'clients' ? (
                     // Client chats
-                    chatUsers.filter((u) => u.type === 'clients').length === 0 ? (
+                    chatUsers.filter((u) => u.category === 'clients').length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         Пока нет сообщений от клиентов
                       </div>
                     ) : (
                       chatUsers
-                        .filter((u) => u.type === 'clients')
+                        .filter((u) => u.category === 'clients')
                         .map((chatUser) => (
                           <div
                             key={chatUser.id}
@@ -334,7 +350,7 @@ const AdminChat: React.FC = () => {
                     <>
                       {/* Existing manager chats */}
                       {chatUsers
-                        .filter((u) => u.type === 'managers')
+                        .filter((u) => u.category === 'managers')
                         .map((chatUser) => (
                           <div
                             key={chatUser.id}
@@ -384,7 +400,7 @@ const AdminChat: React.FC = () => {
                               (m) =>
                                 !chatUsers.some(
                                   (cu) =>
-                                    cu.type === 'managers' && cu.id.includes(m.id)
+                                    cu.category === 'managers' && cu.counterpartId === m.id
                                 )
                             )
                             .map((manager) => (
@@ -412,7 +428,7 @@ const AdminChat: React.FC = () => {
                         </>
                       )}
 
-                      {chatUsers.filter((u) => u.type === 'managers').length === 0 &&
+                      {chatUsers.filter((u) => u.category === 'managers').length === 0 &&
                         managers.length === 0 && (
                           <div className="text-center py-8 text-muted-foreground">
                             Нет доступных менеджеров

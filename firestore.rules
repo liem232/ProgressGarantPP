@@ -119,10 +119,11 @@ service cloud.firestore {
         get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
     }
 
-    function isStaffThreadParticipant() {
-      return isAuthenticated() && 
-        (isAdmin() || isManager()) && 
-        resource.data.participantIds.hasAny([request.auth.uid]);
+    function isStaffThreadParticipantByThread(threadId) {
+      return isAuthenticated() &&
+        (isAdmin() || isManager()) &&
+        get(/databases/$(database)/documents/chatThreads/$(threadId)).data.type == 'staff' &&
+        get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
     }
 
     function isStaffThreadCreator() {
@@ -138,14 +139,14 @@ service cloud.firestore {
         (request.resource.data.type == 'user-manager' || isStaffThreadCreator());
 
       allow update: if exists(/databases/$(database)/documents/chatThreads/$(threadId)) && 
-        (isThreadDocParticipant() || isStaffThreadParticipant()) &&
+        isThreadDocParticipant() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
 
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if isThreadParticipant(threadId) || isAdmin() || isManager();
-        allow create: if isThreadParticipant(threadId) || isStaffThreadParticipant()
+        allow read: if isThreadParticipant(threadId) || isAdmin();
+        allow create: if (isThreadParticipant(threadId) || isStaffThreadParticipantByThread(threadId))
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() <= 1000
