@@ -38,6 +38,7 @@ const ManagerChat: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showMobileChat, setShowMobileChat] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -198,6 +199,16 @@ const ManagerChat: React.FC = () => {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   };
 
+  const handleSelectUser = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowMobileChat(true);
+  };
+
+  const handleBackToList = () => {
+    setShowMobileChat(false);
+    setSelectedUserId(null);
+  };
+
   if (!isManager) {
     return null;
   }
@@ -213,8 +224,8 @@ const ManagerChat: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-          {/* Users List */}
-          <Card className="lg:col-span-1 h-full">
+          {/* Users List - hidden on mobile when chat is open */}
+          <Card className={`lg:col-span-1 h-full ${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col`}>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
@@ -232,7 +243,7 @@ const ManagerChat: React.FC = () => {
                           ? 'bg-primary text-primary-foreground'
                           : 'hover:bg-muted'
                       }`}
-                      onClick={() => setSelectedUserId(chatUser.id)}
+                      onClick={() => handleSelectUser(chatUser.id)}
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>
@@ -265,14 +276,24 @@ const ManagerChat: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Chat */}
-          <Card className="lg:col-span-2 h-full flex flex-col">
+          {/* Chat - hidden on mobile when list is open */}
+          <Card className={`lg:col-span-2 h-full flex-col ${!showMobileChat ? 'hidden lg:flex' : 'flex'}`}>
             <CardHeader className="pb-3 border-b">
-              <CardTitle className="text-lg">
-                {selectedUserId
-                  ? chatUsers.find((u) => u.id === selectedUserId)?.name || 'Чат'
-                  : 'Выберите диалог'}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  onClick={handleBackToList}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <CardTitle className="text-lg">
+                  {selectedUserId
+                    ? chatUsers.find((u) => u.id === selectedUserId)?.name || 'Чат'
+                    : 'Выберите диалог'}
+                </CardTitle>
+              </div>
             </CardHeader>
 
             {/* Messages */}
@@ -360,7 +381,7 @@ const ManagerChat: React.FC = () => {
             </CardContent>
 
             {/* Input */}
-            <div className="p-4 border-t space-y-2">
+            <div className="p-4 border-t space-y-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               {attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {attachments.map((file, index) => (

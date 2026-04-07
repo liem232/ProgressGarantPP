@@ -119,20 +119,33 @@ service cloud.firestore {
         get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
     }
 
-    // Private user-manager threads
+    function isStaffThreadParticipant() {
+      return isAuthenticated() && 
+        (isAdmin() || isManager()) && 
+        resource.data.participantIds.hasAny([request.auth.uid]);
+    }
+
+    function isStaffThreadCreator() {
+      return isAuthenticated() && (isAdmin() || isManager()) &&
+        request.resource.data.type == 'staff';
+    }
+
+    // Private user-manager threads and staff threads
     match /chatThreads/{threadId} {
       allow read: if isAdmin() || isManager() || (exists(/databases/$(database)/documents/chatThreads/$(threadId)) && isThreadDocParticipant()) || isDeterministicThreadOwner(threadId);
 
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        (request.resource.data.type == 'user-manager' || isStaffThreadCreator());
 
-      allow update: if exists(/databases/$(database)/documents/chatThreads/$(threadId)) && isThreadDocParticipant() &&
+      allow update: if exists(/databases/$(database)/documents/chatThreads/$(threadId)) && 
+        (isThreadDocParticipant() || isStaffThreadParticipant()) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
 
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if isThreadParticipant(threadId) || isAdmin();
-        allow create: if isThreadParticipant(threadId)
+        allow read: if isThreadParticipant(threadId) || isAdmin() || isManager();
+        allow create: if isThreadParticipant(threadId) || isStaffThreadParticipant()
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() <= 1000

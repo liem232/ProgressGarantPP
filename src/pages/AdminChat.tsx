@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Send, Paperclip, X, File, ArrowLeft, MessageSquare, Trash2 } from 'lucide-react';
+import { Send, Paperclip, X, File, ArrowLeft, MessageSquare, Users, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   uploadFile,
@@ -16,13 +16,17 @@ import {
   subscribeToThreadMessages,
   sendThreadMessage,
   ChatThread,
+  getAvailableManagers,
+  getOrCreateStaffThread,
+  listStaffThreadsForAdmin,
 } from '@/services/chatService';
 import { useToast } from '@/hooks/use-toast';
 
 interface ChatUser {
   id: string;
   name: string;
-  role: string;
+  role: 'user' | 'manager' | 'admin';
+  type: 'client' | 'staff';
   lastMessage?: string;
   lastMessageTime?: Date;
   unreadCount: number;
@@ -38,6 +42,9 @@ const AdminChat: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const [activeTab, setActiveTab] = useState<'clients' | 'managers'>('clients');
+  const [managers, setManagers] = useState<{id: string, name: string, email: string}[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,10 +59,21 @@ const AdminChat: React.FC = () => {
   useEffect(() => {
     if (!isAdmin) return;
 
+    // Load client threads
     listUserManagerThreadsForStaff().then((allThreads) => {
-      buildUserList(allThreads);
+      buildUserList(allThreads, 'clients');
     });
-  }, [isAdmin]);
+
+    // Load staff threads and available managers
+    if (user?.id) {
+      listStaffThreadsForAdmin(user.id).then((staffThreads) => {
+        buildUserList(staffThreads, 'managers');
+      });
+      getAvailableManagers().then((availableManagers) => {
+        setManagers(availableManagers);
+      });
+    }
+  }, [isAdmin, user?.id]);
 
   // Subscribe to messages for selected thread
   useEffect(() => {
@@ -78,7 +96,7 @@ const AdminChat: React.FC = () => {
     }
   }, [messages, selectedUserId]);
 
-  const buildUserList = (allThreads: ChatThread[]) => {
+  const buildUserList = (allThreads: ChatThread[], type: 'clients' | 'managers') => {
     const users = allThreads.map((t) => {
       const lastMsgTs = t.lastMessage?.timestamp && typeof t.lastMessage.timestamp === 'object' && 'toDate' in t.lastMessage.timestamp
         ? (t.lastMessage.timestamp as any).toDate()
@@ -86,27 +104,30 @@ const AdminChat: React.FC = () => {
           ? new Date(t.lastMessage.timestamp as any)
           : undefined;
 
-      const displayName =
-        t.userName ||
-        t.userEmail ||
-        (t.lastMessage?.senderRole === 'user' ? t.lastMessage.senderName : undefined) ||
-        t.userId;
+      const isStaffThread = t.type === 'staff';
+      const displayName = isStaffThread
+        ? (t.participantIds.find(id => id !== user?.id) || 'Менеджер')
+        : (t.userName || t.userEmail || t.userId);
 
       return {
         id: t.id,
         name: displayName,
-        role: 'user-manager',
+        role: isStaffThread ? 'manager' : 'user',
+        type: type,
         lastMessage: t.lastMessage?.text,
         lastMessageTime: lastMsgTs,
         unreadCount: 0,
       } as ChatUser;
     });
 
-    setChatUsers(users.sort((a, b) => {
-      if (!a.lastMessageTime) return 1;
-      if (!b.lastMessageTime) return -1;
-      return b.lastMessageTime.getTime() - a.lastMessageTime.getTime();
-    }));
+    setChatUsers((prev) => {
+      const otherTypeUsers = prev.filter((u) => u.type !== type);
+      return [...otherTypeUsers, ...users].sort((a, b) => {
+        if (!a.lastMessageTime) return 1;
+        if (!b.lastMessageTime) return -1;
+        return b.lastMessageTime.getTime() - a.lastMessageTime.getTime();
+      });
+    });
   };
 
   const filteredMessages = messages;
@@ -184,6 +205,32 @@ const AdminChat: React.FC = () => {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   };
 
+  const handleSelectUser = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowMobileChat(true);
+  };
+
+  const handleBackToList = () => {
+    setShowMobileChat(false);
+    setSelectedUserId(null);
+  };
+
+  const handleStartManagerChat = async (managerId: string) => {
+    if (!user?.id) return;
+    try {
+      const thread = await getOrCreateStaffThread(user.id, managerId);
+      if (thread) {
+        handleSelectUser(thread.id);
+      }
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось создать чат с менеджером',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (!isAdmin) {
     return null;
   }
@@ -200,71 +247,202 @@ const AdminChat: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-          {/* Users List */}
-          <Card className="lg:col-span-1 h-full">
-            <CardHeader>
+          {/* Users List - hidden on mobile when chat is open */}
+          <Card className={`lg:col-span-1 h-full ${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col`}>
+            <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
-                Диалоги ({chatUsers.length})
+                Диалоги
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[calc(100vh-16rem)]">
-                <div className="space-y-1 p-4">
-                  {chatUsers.map((chatUser) => (
-                    <div
-                      key={chatUser.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                        selectedUserId === chatUser.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-muted'
-                      }`}
-                      onClick={() => setSelectedUserId(chatUser.id)}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          {(chatUser.name || 'U').slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium truncate">{chatUser.name}</p>
-                          {chatUser.unreadCount > 0 && (
-                            <Badge variant="destructive" className="ml-2">
-                              {chatUser.unreadCount}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px]">
-                            {chatUser.role}
-                          </Badge>
-                          <p className="text-xs opacity-80 truncate">
-                            {chatUser.lastMessage || 'Нет сообщений'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+            <CardContent className="p-0 flex-1 overflow-hidden">
+              {/* Tabs */}
+              <div className="flex border-b">
+                <button
+                  className={`flex-1 py-2 text-sm font-medium flex items-center justify-center gap-2 ${
+                    activeTab === 'clients'
+                      ? 'border-b-2 border-primary text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setActiveTab('clients')}
+                >
+                  <Users className="h-4 w-4" />
+                  Клиенты
+                </button>
+                <button
+                  className={`flex-1 py-2 text-sm font-medium flex items-center justify-center gap-2 ${
+                    activeTab === 'managers'
+                      ? 'border-b-2 border-primary text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setActiveTab('managers')}
+                >
+                  <Briefcase className="h-4 w-4" />
+                  Менеджеры
+                </button>
+              </div>
 
-                  {chatUsers.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Пока нет сообщений
-                    </div>
+              <ScrollArea className="h-[calc(100vh-20rem)]">
+                <div className="space-y-1 p-4">
+                  {activeTab === 'clients' ? (
+                    // Client chats
+                    chatUsers.filter((u) => u.type === 'clients').length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Пока нет сообщений от клиентов
+                      </div>
+                    ) : (
+                      chatUsers
+                        .filter((u) => u.type === 'clients')
+                        .map((chatUser) => (
+                          <div
+                            key={chatUser.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                              selectedUserId === chatUser.id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-muted'
+                            }`}
+                            onClick={() => handleSelectUser(chatUser.id)}
+                          >
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback>
+                                {(chatUser.name || 'U').slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium truncate">{chatUser.name}</p>
+                                {chatUser.unreadCount > 0 && (
+                                  <Badge variant="destructive" className="ml-2">
+                                    {chatUser.unreadCount}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-[10px]">
+                                  Клиент
+                                </Badge>
+                                <p className="text-xs opacity-80 truncate">
+                                  {chatUser.lastMessage || 'Нет сообщений'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                    )
+                  ) : (
+                    // Manager chats and available managers
+                    <>
+                      {/* Existing manager chats */}
+                      {chatUsers
+                        .filter((u) => u.type === 'managers')
+                        .map((chatUser) => (
+                          <div
+                            key={chatUser.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                              selectedUserId === chatUser.id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-muted'
+                            }`}
+                            onClick={() => handleSelectUser(chatUser.id)}
+                          >
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback>
+                                {(chatUser.name || 'M').slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium truncate">{chatUser.name}</p>
+                                {chatUser.unreadCount > 0 && (
+                                  <Badge variant="destructive" className="ml-2">
+                                    {chatUser.unreadCount}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-[10px]">
+                                  Менеджер
+                                </Badge>
+                                <p className="text-xs opacity-80 truncate">
+                                  {chatUser.lastMessage || 'Нет сообщений'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                      {/* Available managers to start chat */}
+                      {managers.length > 0 && (
+                        <>
+                          <div className="pt-4 pb-2">
+                            <p className="text-xs text-muted-foreground uppercase font-medium">
+                              Начать чат с менеджером
+                            </p>
+                          </div>
+                          {managers
+                            .filter(
+                              (m) =>
+                                !chatUsers.some(
+                                  (cu) =>
+                                    cu.type === 'managers' && cu.id.includes(m.id)
+                                )
+                            )
+                            .map((manager) => (
+                              <div
+                                key={manager.id}
+                                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted border border-dashed border-muted-foreground/30"
+                                onClick={() => handleStartManagerChat(manager.id)}
+                              >
+                                <Avatar className="h-10 w-10">
+                                  <AvatarFallback>
+                                    {(manager.name || 'M').slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{manager.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {manager.email}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className="text-[10px]">
+                                  Новый чат
+                                </Badge>
+                              </div>
+                            ))}
+                        </>
+                      )}
+
+                      {chatUsers.filter((u) => u.type === 'managers').length === 0 &&
+                        managers.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            Нет доступных менеджеров
+                          </div>
+                        )}
+                    </>
                   )}
                 </div>
               </ScrollArea>
             </CardContent>
           </Card>
 
-          {/* Chat */}
-          <Card className="lg:col-span-2 h-full flex flex-col">
+          {/* Chat - hidden on mobile when list is open */}
+          <Card className={`lg:col-span-2 h-full flex-col ${!showMobileChat ? 'hidden lg:flex' : 'flex'}`}>
             <CardHeader className="pb-3 border-b">
-              <CardTitle className="text-lg">
-                {selectedUserId
-                  ? chatUsers.find((u) => u.id === selectedUserId)?.name || 'Чат'
-                  : 'Выберите диалог'}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  onClick={handleBackToList}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <CardTitle className="text-lg">
+                  {selectedUserId
+                    ? chatUsers.find((u) => u.id === selectedUserId)?.name || 'Чат'
+                    : 'Выберите диалог'}
+                </CardTitle>
+              </div>
             </CardHeader>
 
             {/* Messages */}
@@ -350,7 +528,7 @@ const AdminChat: React.FC = () => {
             </CardContent>
 
             {/* Input */}
-            <div className="p-4 border-t space-y-2">
+            <div className="p-4 border-t space-y-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               {attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {attachments.map((file, index) => (

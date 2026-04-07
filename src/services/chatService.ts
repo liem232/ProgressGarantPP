@@ -52,9 +52,9 @@ export interface ChatRoom {
 
 export interface ChatThread {
   id: string;
-  type: 'user-manager';
+  type: 'user-manager' | 'staff';
   participantIds: string[];
-  userId: string;
+  userId?: string;
   userName?: string;
   userEmail?: string;
   createdAt: Timestamp;
@@ -484,7 +484,7 @@ export const listUserManagerThreadsForStaff = async (participantId?: string): Pr
     return threads.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
   }
 
-  // Admin use-case: list all threads.
+  // Admin use-case: list all user-manager threads.
   const q = query(threadsCollection, where('type', '==', 'user-manager'), orderBy('updatedAt', 'desc'));
   const snapshot = await getDocs(q);
   const threads = snapshot.docs.map((docSnap) => {
@@ -502,6 +502,103 @@ export const listUserManagerThreadsForStaff = async (participantId?: string): Pr
     } as ChatThread;
   });
   return threads;
+};
+
+// Staff threads: admin <-> manager direct communication
+export const getOrCreateStaffThread = async (
+  adminId: string,
+  managerId: string
+): Promise<ChatThread | null> => {
+  if (!adminId || !managerId) return null;
+
+  const sortedIds = [adminId, managerId].sort();
+  const deterministicThreadId = `staff_${sortedIds[0]}_${sortedIds[1]}`;
+
+  if (!isFirebaseConfigured || !threadsCollection || !db) {
+    const existing = localThreads.find(
+      (t) => t.type === 'staff' && t.participantIds.includes(adminId) && t.participantIds.includes(managerId)
+    );
+    if (existing) return existing;
+
+    const now = Timestamp.now();
+    const thread: ChatThread = {
+      id: deterministicThreadId,
+      type: 'staff',
+      participantIds: sortedIds,
+      createdAt: now,
+      updatedAt: now,
+    };
+    localThreads.push(thread);
+    return thread;
+  }
+
+  const threadRef = doc(db, THREADS_COLLECTION, deterministicThreadId);
+  const existingSnap = await getDoc(threadRef);
+  if (existingSnap.exists()) {
+    const data = existingSnap.data() as DocumentData;
+    return {
+      id: existingSnap.id,
+      type: data.type,
+      participantIds: data.participantIds || [],
+      userId: data.userId,
+      userName: typeof data.userName === 'string' ? data.userName : undefined,
+      userEmail: typeof data.userEmail === 'string' ? data.userEmail : undefined,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      lastMessage: data.lastMessage || undefined,
+    } as ChatThread;
+  }
+
+  const threadData = {
+    type: 'staff' as const,
+    participantIds: sortedIds,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastMessage: null,
+  };
+
+  await setDoc(threadRef, threadData);
+
+  const now = Timestamp.now();
+  return {
+    id: deterministicThreadId,
+    type: 'staff',
+    participantIds: sortedIds,
+    createdAt: now,
+    updatedAt: now,
+    lastMessage: undefined,
+  } as ChatThread;
+};
+
+export const listStaffThreadsForAdmin = async (adminId: string): Promise<ChatThread[]> => {
+  if (!isFirebaseConfigured || !threadsCollection || !db) {
+    return localThreads
+      .filter((t) => t.type === 'staff' && t.participantIds.includes(adminId))
+      .sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
+  }
+
+  // Query all staff threads where admin participates
+  const q = query(
+    threadsCollection,
+    where('type', '==', 'staff'),
+    where('participantIds', 'array-contains', adminId)
+  );
+  const snapshot = await getDocs(q);
+  const threads = snapshot.docs.map((docSnap) => {
+    const data = docSnap.data() as DocumentData;
+    return {
+      id: docSnap.id,
+      type: data.type,
+      participantIds: data.participantIds || [],
+      userId: data.userId,
+      userName: typeof data.userName === 'string' ? data.userName : undefined,
+      userEmail: typeof data.userEmail === 'string' ? data.userEmail : undefined,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      lastMessage: data.lastMessage || undefined,
+    } as ChatThread;
+  });
+  return threads.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
 };
 
 export const sendThreadMessage = async (
