@@ -190,7 +190,7 @@ service cloud.firestore {
 
       match /messages/{messageId} {
         allow read: if isThreadParticipant(threadId) || isAdmin();
-        allow create: if (isThreadParticipant(threadId) || isStaffThreadParticipantByThread(threadId))
+        allow create: if isThreadParticipant(threadId)
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() <= 1000
