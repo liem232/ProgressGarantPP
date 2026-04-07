@@ -15,6 +15,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { createOrder } from '@/services/ordersService';
+import { orderSchema } from '@/lib/validation';
 
 const Checkout: React.FC = () => {
   const [orderData, setOrderData] = useState({
@@ -57,6 +58,16 @@ const Checkout: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!user?.id) {
+      toast({
+        title: 'Ошибка',
+        description: 'Необходимо войти в систему, чтобы оформить заказ',
+        variant: 'destructive',
+      });
+      navigate('/login');
+      return;
+    }
+
     if (!acceptTerms) {
       toast({
         title: "Ошибка",
@@ -78,8 +89,7 @@ const Checkout: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Сохраняем заказ в Firestore
-      const order = await createOrder({
+      const candidateOrder = {
         items: cartItems.map(item => ({
           id: item.id,
           name: item.name,
@@ -95,13 +105,26 @@ const Checkout: React.FC = () => {
           city: 'Оренбург',
           address: orderData.deliveryMethod === 'delivery' ? orderData.address : 'Самовывоз (пр-д Автоматики, 12)',
           comment: orderData.comment,
-          userId: user?.id,
+          userId: user.id,
         },
         totalPrice: totalAmount,
         totalItems: cartItems.reduce((acc, item) => acc + item.quantity, 0),
         date: new Date().toISOString(),
-        status: 'pending',
-      });
+        status: 'pending' as const,
+      };
+
+      const parsed = orderSchema.safeParse(candidateOrder);
+      if (!parsed.success) {
+        toast({
+          title: 'Ошибка',
+          description: parsed.error.issues[0]?.message || 'Проверьте данные заказа',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Сохраняем заказ в Firestore
+      const order = await createOrder(parsed.data);
 
       clearCart();
 

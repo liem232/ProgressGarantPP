@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { loginSchema } from '@/lib/validation';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -23,10 +24,21 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const parsed = loginSchema.safeParse({
+      email: email.trim(),
+      password,
+    });
+
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || 'Проверьте введённые данные');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
+      const success = await login(parsed.data.email, parsed.data.password);
       if (success) {
         toast({
           title: "Успешный вход",
@@ -103,12 +115,6 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            {/* Подсказка для админа */}
-            <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
-              <strong>Для входа как администратор:</strong><br />
-              Email: admin@progressgarant.ru<br />
-              Пароль: progressgarant2024
-            </div>
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-4">

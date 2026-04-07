@@ -30,10 +30,6 @@ service cloud.firestore {
       );
     }
 
-    function isManagerUser(userId) {
-      return getUserRole(userId) == 'manager' || getUserRole(userId) == 'admin';
-    }
-    
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -52,10 +48,64 @@ service cloud.firestore {
         && request.resource.data.orderData.email is string
         && request.resource.data.orderData.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$')
         && request.resource.data.orderData.phone is string
+        && request.resource.data.orderData.userId == request.auth.uid
         && request.resource.data.totalPrice is number
         && request.resource.data.totalPrice >= 0
         && request.resource.data.items is list
         && request.resource.data.items.size() > 0;
+    }
+
+    function isSafeUserUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'username',
+        'firstName',
+        'lastName',
+        'phone',
+        'address'
+      ]);
+    }
+
+    function isValidAttachment(att) {
+      return att is map
+        && att.keys().hasOnly(['id', 'name', 'url', 'type', 'size'])
+        && att.id is string
+        && att.name is string
+        && att.url is string
+        && att.type is string
+        && att.size is number
+        && att.size >= 0;
+    }
+
+    function isValidAttachmentsList(attachments) {
+      return attachments is list
+        && attachments.size() <= 10
+        && (attachments.size() < 1 || isValidAttachment(attachments[0]))
+        && (attachments.size() < 2 || isValidAttachment(attachments[1]))
+        && (attachments.size() < 3 || isValidAttachment(attachments[2]))
+        && (attachments.size() < 4 || isValidAttachment(attachments[3]))
+        && (attachments.size() < 5 || isValidAttachment(attachments[4]))
+        && (attachments.size() < 6 || isValidAttachment(attachments[5]))
+        && (attachments.size() < 7 || isValidAttachment(attachments[6]))
+        && (attachments.size() < 8 || isValidAttachment(attachments[7]))
+        && (attachments.size() < 9 || isValidAttachment(attachments[8]))
+        && (attachments.size() < 10 || isValidAttachment(attachments[9]));
+    }
+
+    function isValidThreadType(t) {
+      return t == 'user-manager' || t == 'staff';
+    }
+
+    function isValidThreadCreate(threadId) {
+      return request.resource.data.type is string
+        && isValidThreadType(request.resource.data.type)
+        && request.resource.data.participantIds is list
+        && request.resource.data.participantIds.size() == 2
+        && request.resource.data.participantIds.hasAny([request.auth.uid])
+        && (
+          (request.resource.data.type == 'user-manager' && threadId.matches('^' + request.auth.uid + '_.*$'))
+          ||
+          (request.resource.data.type == 'staff' && threadId.matches('^staff_.*$') && (isAdmin() || isManager()))
+        );
     }
     
     // Products collection
@@ -74,7 +124,10 @@ service cloud.firestore {
         resource.data.role == 'admin'
       );
       allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && isSafeUserUpdate()) ||
+        isAdmin()
+      );
       allow delete: if isAdmin();
     }
 
@@ -92,9 +145,7 @@ service cloud.firestore {
       );
       allow create: if isAuthenticated() && isValidOrder();
       allow update: if isAuthenticated() && (
-        (isManager() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
-        (resource.data.orderData.userId == request.auth.uid && 
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+        (isManager() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
       );
       allow delete: if isAdmin();
     }
@@ -126,20 +177,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
     }
 
-    function isStaffThreadCreator() {
-      return isAuthenticated() && (isAdmin() || isManager()) &&
-        request.resource.data.type == 'staff';
-    }
-
     // Private user-manager threads and staff threads
     match /chatThreads/{threadId} {
-      allow read: if isAdmin() || isManager() || (exists(/databases/$(database)/documents/chatThreads/$(threadId)) && isThreadDocParticipant()) || isDeterministicThreadOwner(threadId);
+      allow read: if isAdmin() || isThreadDocParticipant() || isDeterministicThreadOwner(threadId);
 
-      allow create: if isAuthenticated() && 
-        (request.resource.data.type == 'user-manager' || isStaffThreadCreator());
+      allow create: if isAuthenticated() && isValidThreadCreate(threadId);
 
-      allow update: if exists(/databases/$(database)/documents/chatThreads/$(threadId)) && 
-        isThreadDocParticipant() &&
+      allow update: if isThreadDocParticipant() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
 
       allow delete: if isAdmin();
@@ -150,9 +194,10 @@ service cloud.firestore {
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() <= 1000
+          && (!('attachments' in request.resource.data) || isValidAttachmentsList(request.resource.data.attachments))
           && (
             request.resource.data.text.size() > 0 ||
-            (request.resource.data.attachments is list && request.resource.data.attachments.size() > 0)
+            ('attachments' in request.resource.data && request.resource.data.attachments is list && request.resource.data.attachments.size() > 0)
           );
         allow update, delete: if isAdmin();
       }

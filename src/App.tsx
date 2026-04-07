@@ -21,6 +21,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Orders from "./pages/Orders";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import Admin from "./pages/Admin";
 import ManagerChat from "./pages/ManagerChat";
 import AdminChat from "./pages/AdminChat";
@@ -53,6 +55,8 @@ const App = () => (
                   <Route path="/register" element={<Register />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/orders" element={<Orders />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/manager/chat" element={<ManagerChat />} />
                   <Route path="/manager/orders" element={<ManagerOrders />} />

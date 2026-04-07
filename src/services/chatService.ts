@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, isFirebaseConfigured } from '@/lib/firebase';
+import { chatMessageSchema } from '@/lib/validation';
 
 export interface ChatMessage {
   id: string;
@@ -646,6 +647,20 @@ export const sendThreadMessage = async (
   const trimmedText = (text || '').trim();
   const normalizedAttachments = attachments || [];
   if (!trimmedText && normalizedAttachments.length === 0) return null;
+
+  const parsed = chatMessageSchema.safeParse({
+    text: trimmedText || ' ',
+    senderId,
+    senderName,
+    senderRole,
+    attachments: normalizedAttachments.length > 0 ? normalizedAttachments : undefined,
+    orderId,
+  });
+
+  if (!parsed.success) {
+    console.error('sendThreadMessage validation failed:', parsed.error.issues);
+    return null;
+  }
 
   if (!isFirebaseConfigured || !db) {
     const message: ChatMessage = {

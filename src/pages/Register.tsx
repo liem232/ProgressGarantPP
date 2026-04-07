@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { registerSchema } from '@/lib/validation';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -39,13 +40,22 @@ const Register: React.FC = () => {
     e.preventDefault();
     setLocalError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setLocalError('Пароли не совпадают');
+    const parsed = registerSchema.safeParse({
+      username: formData.username.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
+      firstName: formData.firstName.trim() || undefined,
+      lastName: formData.lastName.trim() || undefined,
+      phone: formData.phone.trim(),
+    });
+
+    if (!parsed.success) {
+      setLocalError(parsed.error.issues[0]?.message || 'Проверьте введённые данные');
       return;
     }
 
-    if (formData.password.length < 6) {
-      setLocalError('Пароль должен содержать минимум 6 символов');
+    if (formData.password !== formData.confirmPassword) {
+      setLocalError('Пароли не совпадают');
       return;
     }
 
@@ -53,12 +63,12 @@ const Register: React.FC = () => {
 
     try {
       const success = await register({
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone
+        username: parsed.data.username,
+        email: parsed.data.email,
+        password: parsed.data.password,
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        phone: parsed.data.phone
       });
 
       if (success) {
@@ -82,7 +92,11 @@ const Register: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-12 h-12 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">ПГ</span>
+            <img
+              src="/img/logooo.png"
+              alt="ПрогрессГарант"
+              className="w-10 h-10 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl">Регистрация</CardTitle>
           <CardDescription>
