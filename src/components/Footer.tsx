@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center">
-                <span className="logo"><img src="img/logooo.png" alt=""/></span>
+                <span className="logo"><img src="/img/logooo.png" alt=""/></span>
               </div>
               <span className="text-xl font-bold text-foreground">ПрогрессГарант</span>
             </Link>
