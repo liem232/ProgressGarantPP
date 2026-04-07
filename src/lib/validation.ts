@@ -72,7 +72,7 @@ export const chatMessageSchema = z.object({
   text: z.string().min(1, 'Сообщение не может быть пустым').max(1000, 'Сообщение слишком длинное'),
   senderId: z.string(),
   senderName: z.string().min(1),
-  senderRole: z.enum(['admin', 'user']),
+  senderRole: z.enum(['admin', 'user', 'manager']),
   attachments: z.array(z.object({
     id: z.string(),
     name: z.string(),
