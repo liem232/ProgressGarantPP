@@ -48,6 +48,15 @@ const ChatWidget: React.FC = () => {
   const messagesLengthRef = useRef(0);
   const isOpenRef = useRef(false);
 
+  useEffect(() => {
+    const handler = () => {
+      setIsMinimized(false);
+      setIsOpen(true);
+    };
+    window.addEventListener('open-manager-chat', handler);
+    return () => window.removeEventListener('open-manager-chat', handler);
+  }, []);
+
   // Resolve manager for private chat (use Firestore config)
   useEffect(() => {
     if (!isAuthenticated || !user || isManager) return;
@@ -250,7 +259,7 @@ const ChatWidget: React.FC = () => {
       {/* Chat Window */}
       {isOpen && (
         <div 
-          className="fixed z-50 transition-all duration-300 ease-in-out bottom-0 left-0 right-0 sm:bottom-6 sm:right-6 sm:left-auto sm:w-[420px] md:w-[480px] lg:w-[520px]"
+          className="fixed z-50 transition-all duration-300 ease-in-out bottom-0 left-0 right-0 top-0 sm:top-auto sm:bottom-6 sm:right-6 sm:left-auto sm:w-[420px] md:w-[480px] lg:w-[520px]"
         >
           <Card className="h-full sm:h-[600px] md:h-[650px] lg:h-[700px] shadow-2xl border-0 flex flex-col overflow-hidden">
             {/* Header */}
@@ -439,12 +448,12 @@ const ChatWidget: React.FC = () => {
             </CardContent>
 
             {/* Input Area */}
-            <div className="p-4 border-t bg-card shrink-0">
+            <div className="p-4 border-t bg-card shrink-0 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               <div className="flex items-end gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground hidden sm:flex"
+                  className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Paperclip className="h-5 w-5" />

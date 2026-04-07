@@ -17,7 +17,7 @@ const Catalog: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('Все товары');
   const [selectedBrand, setSelectedBrand] = useState('Все бренды');
   const [priceRange, setPriceRange] = useState([0, 20000]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('name');
 
   const { addToCart } = useCart();
@@ -165,7 +165,7 @@ const Catalog: React.FC = () => {
         </div>
 
         {/* Панель управления отображением */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 sticky top-16 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 py-3 -mx-4 px-4 border-b border-border">
           <div className="text-sm text-muted-foreground">
             Найдено товаров: {filteredProducts.length}
           </div>
@@ -204,25 +204,25 @@ const Catalog: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className={`grid gap-6 ${
+          <div className={`grid gap-4 sm:gap-6 ${
             viewMode === 'grid' 
               ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
               : 'grid-cols-1'
           }`}>
             {filteredProducts.map((product) => (
-              <Card key={product.id} className={`hover:shadow-lg transition-shadow ${
-                viewMode === 'list' ? 'flex flex-row' : ''
+              <Card key={product.id} className={`hover:shadow-lg transition-shadow overflow-hidden ${
+                viewMode === 'list' ? 'flex flex-col sm:flex-row' : ''
               }`}>
-                <div className={viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}>
-                  <CardHeader className={`p-4 ${viewMode === 'list' ? 'pb-0' : ''}`}>
-                    <div className={`aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center ${
-                      viewMode === 'list' ? 'aspect-square w-full' : ''
+                <div className={viewMode === 'list' ? 'w-full sm:w-56 flex-shrink-0' : ''}>
+                  <CardHeader className={`p-4 ${viewMode === 'list' ? 'pb-2' : ''}`}>
+                    <div className={`bg-muted rounded-xl flex items-center justify-center overflow-hidden ${
+                      viewMode === 'list' ? 'aspect-[16/10] sm:aspect-square w-full' : 'aspect-square'
                     }`}>
                       {product.image ? (
                         <img
                           src={product.image}
                           alt={product.name}
-                          className="object-cover w-full h-full rounded-lg"
+                          className="object-cover w-full h-full"
                         />
                       ) : (
                         <Package className={`text-muted-foreground ${
@@ -234,10 +234,15 @@ const Catalog: React.FC = () => {
                 </div>
                 
                 <div className="flex-1">
-                  <CardHeader className={`${viewMode === 'list' ? 'pt-4' : 'pt-0'} px-4`}>
-                    <CardTitle className={`${viewMode === 'list' ? 'text-lg' : 'text-lg'} line-clamp-2`}>
+                  <CardHeader className={`${viewMode === 'list' ? 'pt-0' : 'pt-0'} px-4`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <CardTitle className="text-lg sm:text-lg line-clamp-2">
                       {product.name}
-                    </CardTitle>
+                      </CardTitle>
+                      <Badge variant={product.inStock ? "default" : "secondary"} className="shrink-0">
+                        {product.inStock ? "В наличии" : "Нет"}
+                      </Badge>
+                    </div>
                     <CardDescription className="line-clamp-2">
                       {product.description}
                     </CardDescription>
@@ -246,18 +251,19 @@ const Catalog: React.FC = () => {
                   <CardContent className="p-4 pt-0">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-primary">
+                        <span className="text-2xl sm:text-2xl font-bold text-primary">
                           {product.price.toLocaleString('ru-RU')} ₽
                         </span>
-                        <Badge variant={product.inStock ? "default" : "secondary"}>
-                          {product.inStock ? "В наличии" : "Нет в наличии"}
-                        </Badge>
+                        <div className="text-xs text-muted-foreground">
+                          {product.brand || ''}
+                        </div>
                       </div>
                       
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        {product.brand && <p>Бренд: {product.brand}</p>}
+                      <div className="text-sm text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                         {product.volume && <p>Объем: {product.volume}</p>}
                         {product.strength && <p>Крепость: {product.strength}</p>}
+                        {product.category && <p>Категория: {product.category}</p>}
+                        {product.brand && <p>Бренд: {product.brand}</p>}
                       </div>
                     </div>
                   </CardContent>

@@ -9,6 +9,7 @@ import {
   Clock, 
   User, 
   MessageCircle,
+  Handshake,
   ExternalLink,
   Navigation,
   Copy,
@@ -81,6 +82,53 @@ const Contacts: React.FC = () => {
               Мы всегда рады ответить на ваши вопросы и помочь с выбором продукции
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="py-6">
+        <div className="container mx-auto px-4">
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-primary/5 via-background to-accent">
+            <CardContent className="p-6 md:p-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <Handshake className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Партнёрство</p>
+                      <h2 className="text-2xl font-bold">Станьте нашим партнёром</h2>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground max-w-2xl">
+                    Оптовые цены, персональный менеджер, быстрая логистика и поддержка по документам.
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Badge variant="secondary">Оптовые условия</Badge>
+                    <Badge variant="secondary">Скидки партнёрам</Badge>
+                    <Badge variant="secondary">Персональный менеджер</Badge>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button asChild size="lg" className="shadow-lg">
+                    <Link to="/partners">
+                      <TrendingUp className="mr-2 h-5 w-5" />
+                      Условия партнёрства
+                    </Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => window.dispatchEvent(new Event('open-manager-chat'))}
+                  >
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Задать вопрос
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -273,14 +321,12 @@ const Contacts: React.FC = () => {
                 </Link>
               </Button>
               <Button 
-                size="lg" 
-                className="h-14 px-8 text-lg bg-white text-primary hover:bg-white/90 shadow-lg"
-                asChild
+                size="lg"
+                className="h-14 px-8 text-lg bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
+                onClick={() => window.dispatchEvent(new Event('open-manager-chat'))}
               >
-                <Link to="/contacts">
-                  <Phone className="mr-2 h-5 w-5" />
-                  Получить консультацию
-                </Link>
+                <Phone className="mr-2 h-5 w-5" />
+                Получить консультацию
               </Button>
             </div>
           </div>

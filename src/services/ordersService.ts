@@ -97,34 +97,39 @@ export const getOrders = async (userId?: string): Promise<Order[]> => {
     return orders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
-  let q;
-  if (userId) {
-    // Avoid requiring a composite index (where + orderBy) by sorting on the client.
-    q = query(ordersCollection, where('orderData.userId', '==', userId));
-  } else {
-    q = query(ordersCollection, orderBy('createdAt', 'desc'));
+  try {
+    let q;
+    if (userId) {
+      // Avoid requiring a composite index (where + orderBy) by sorting on the client.
+      q = query(ordersCollection, where('orderData.userId', '==', userId));
+    } else {
+      q = query(ordersCollection, orderBy('createdAt', 'desc'));
+    }
+
+    const snapshot = await getDocs(q);
+    const results = snapshot.docs.map(docSnap => {
+      const data = docSnap.data() as DocumentData;
+      return {
+        id: docSnap.id,
+        items: data.items || [],
+        orderData: data.orderData || {},
+        totalPrice: data.totalPrice || 0,
+        totalItems: data.totalItems || 0,
+        date: data.date || data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
+        status: data.status || 'pending',
+        createdAt: data.createdAt,
+      } as Order;
+    });
+
+    return results.sort((a, b) => {
+      const aTime = (a.createdAt?.toMillis?.() ?? new Date(a.date).getTime());
+      const bTime = (b.createdAt?.toMillis?.() ?? new Date(b.date).getTime());
+      return bTime - aTime;
+    });
+  } catch (error) {
+    console.error('getOrders error:', error);
+    throw error;
   }
-
-  const snapshot = await getDocs(q);
-  const results = snapshot.docs.map(docSnap => {
-    const data = docSnap.data() as DocumentData;
-    return {
-      id: docSnap.id,
-      items: data.items || [],
-      orderData: data.orderData || {},
-      totalPrice: data.totalPrice || 0,
-      totalItems: data.totalItems || 0,
-      date: data.date || data.createdAt?.toDate?.().toISOString() || new Date().toISOString(),
-      status: data.status || 'pending',
-      createdAt: data.createdAt,
-    } as Order;
-  });
-
-  return results.sort((a, b) => {
-    const aTime = (a.createdAt?.toMillis?.() ?? new Date(a.date).getTime());
-    const bTime = (b.createdAt?.toMillis?.() ?? new Date(b.date).getTime());
-    return bTime - aTime;
-  });
 };
 
 export const getOrderById = async (orderId: string): Promise<Order | null> => {

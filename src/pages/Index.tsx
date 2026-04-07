@@ -479,14 +479,12 @@ const Index = () => {
                 </Link>
               </Button>
               <Button 
-                size="lg" 
-                className="h-14 px-8 text-lg bg-background text-foreground hover:bg-background/90 shadow-lg"
-                asChild
+                size="lg"
+                className="h-14 px-8 text-lg bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
+                onClick={() => window.dispatchEvent(new Event('open-manager-chat'))}
               >
-                <Link to="/contacts">
-                  <Phone className="mr-2 h-5 w-5" />
-                  Получить консультацию
-                </Link>
+                <Phone className="mr-2 h-5 w-5" />
+                Получить консультацию
               </Button>
             </div>
           </div>

@@ -16,13 +16,17 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isAuthenticated() && getUserRole(request.auth.uid) == 'admin';
+      return isAuthenticated() && (
+        getUserRole(request.auth.uid) == 'admin' ||
+        request.auth.token.email == 'admin@progressgarant.ru'
+      );
     }
 
     function isManager() {
       return isAuthenticated() && (
         getUserRole(request.auth.uid) == 'manager' ||
-        getUserRole(request.auth.uid) == 'admin'
+        getUserRole(request.auth.uid) == 'admin' ||
+        request.auth.token.email in ['manager@progressgarant.ru', 'admin@progressgarant.ru']
       );
     }
 
@@ -83,12 +87,12 @@ service cloud.firestore {
     // Orders collection
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (
-        isAdmin() || 
+        isManager() || 
         resource.data.orderData.userId == request.auth.uid
       );
       allow create: if isAuthenticated() && isValidOrder();
       allow update: if isAuthenticated() && (
-        isAdmin() || 
+        (isManager() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
         (resource.data.orderData.userId == request.auth.uid && 
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
       );

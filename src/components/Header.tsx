@@ -128,6 +128,9 @@ const Header: React.FC = () => {
                   {isManager && !isAdmin && (
                     <>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/manager/orders')}>
+                        Заказы (менеджер)
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate('/manager/chat')}>
                         Чаты с клиентами
                       </DropdownMenuItem>

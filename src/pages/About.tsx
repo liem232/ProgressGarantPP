@@ -145,7 +145,7 @@ const About: React.FC = () => {
                   <MapPin className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium">Адрес офиса:</p>
-                    <p className="text-muted-foreground">г. Оренбург, пр-д Автоматики д.19</p>
+                    <p className="text-muted-foreground">г. Оренбург, ул. Диагностики, 7</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

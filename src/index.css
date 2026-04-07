@@ -9,13 +9,13 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* светло-золотая тема для ПрогрессГарант */
-    --background: 0 0% 98%;
+    --background: 40 25% 96%;
     --foreground: 220 10% 15%;
 
-    --card: 0 0% 100%;
+    --card: 40 30% 99%;
     --card-foreground: 220 10% 15%;
 
-    --popover: 0 0% 100%;
+    --popover: 40 30% 99%;
     --popover-foreground: 220 10% 15%;
 
     /* Основные цвета - золотые акценты */
@@ -124,6 +124,26 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -20vh -20vw;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(60vw 40vw at 20% 10%, hsl(45 90% 55% / 0.14), transparent 60%),
+      radial-gradient(70vw 50vw at 80% 30%, hsl(220 8% 30% / 0.06), transparent 65%),
+      radial-gradient(70vw 60vw at 30% 85%, hsl(45 85% 65% / 0.10), transparent 62%);
+    filter: blur(18px);
+    opacity: 0.9;
+    mix-blend-mode: normal;
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
   }
 }
 
