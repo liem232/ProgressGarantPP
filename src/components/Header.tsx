@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   ShoppingCart, 
   User, 
   Menu, 
@@ -10,8 +10,6 @@ import {
   LogOut,
   UserCheck
 } from 'lucide-react';
-import { Sun, Moon } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -26,7 +24,6 @@ const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { totalItems } = useCart();
   const { user, logout, isAuthenticated, isAdmin, isManager } = useAuth();
-  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -49,7 +46,7 @@ const Header: React.FC = () => {
           {/* Логотип */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center">
-              <span className="logo"><img src="img/logooo.png" alt="" /></span>
+              <span className="logo"><img src="/img/logooo.png" alt="" /></span>
             </div>
             <div className="hidden sm:block">
               <span className="text-xl font-bold text-foreground">ПрогрессГарант</span>
@@ -85,17 +82,6 @@ const Header: React.FC = () => {
                   {totalItems}
                 </Badge>
               )}
-            </Button>
-
-            {/* Переключатель темы */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              aria-label="Toggle theme"
-              title="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
             {/* Пользователь */}
