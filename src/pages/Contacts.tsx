@@ -175,9 +175,9 @@ const Contacts: React.FC = () => {
             <Card className="border-0 shadow-xl overflow-hidden">
               <div className="aspect-video relative bg-muted">
                 <iframe 
-                  src="https://yandex.ru/map-widget/v1/?ll=55.0977%2C51.7682&z=16&text=проспект%20Автоматики%2012%20Оренбург" 
+                  src="https://yandex.ru/map-widget/v1/?ll=55.0977%2C51.7682&z=16&text=ул%20Диагностики%207%20Оренбург" 
                   width="100%" 
-                  height="100%" 
+                  height="300%" 
                   frameBorder="0"
                   className="absolute inset-0"
                   allowFullScreen
@@ -322,7 +322,7 @@ const Contacts: React.FC = () => {
               </Button>
               <Button 
                 size="lg"
-                className="h-14 px-8 text-lg bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
+                className="h-14 px-8 text-lg bg-yellow-600 text-white hover:bg-yellow-700 shadow-lg"
                 onClick={() => window.dispatchEvent(new Event('open-manager-chat'))}
               >
                 <Phone className="mr-2 h-5 w-5" />

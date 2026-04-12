@@ -280,23 +280,9 @@ const ChatWidget: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 text-primary-foreground hover:bg-primary-foreground/20 lg:hidden"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+               
                 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden lg:flex h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <Minimize2 className="h-4 w-4" />
-                </Button>
+                
 
                 <Button
                   variant="ghost"

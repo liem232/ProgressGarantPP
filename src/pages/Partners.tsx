@@ -330,7 +330,7 @@ const Partners: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-red">
                   <div>
                     <Label htmlFor="businessType">Тип бизнеса</Label>
                     <select
@@ -380,7 +380,7 @@ const Partners: React.FC = () => {
 
                 <button 
                   type="submit" 
-                  className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-primary-dark"
+                  className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-red"
                 >
                   Отправить заявку
                 </button>
