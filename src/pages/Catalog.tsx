@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,29 +74,31 @@ const Catalog: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen bg-background py-6">
       <div className="container mx-auto px-4">
         {/* Заголовок */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
             Каталог товаров
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Широкий ассортимент табачной и кальянной продукции
           </p>
         </div>
 
         {/* Фильтры */}
-        <div className="bg-card rounded-lg border p-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Фильтры</h2>
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
+        <div className="bg-card rounded-lg border p-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold">Фильтры</h2>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs">
               Сбросить
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
             {/* Поиск */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -103,7 +106,7 @@ const Catalog: React.FC = () => {
                 placeholder="Поиск товаров..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-9 text-sm"
               />
             </div>
 
@@ -149,7 +152,7 @@ const Catalog: React.FC = () => {
 
             {/* Ценовой диапазон */}
             <div className="col-span-2">
-              <label className="text-sm font-medium mb-2 block">
+              <label className="text-xs font-medium mb-2 block">
                 Цена: {priceRange[0].toLocaleString()} - {priceRange[1].toLocaleString()} ₽
               </label>
               <Slider
@@ -165,21 +168,23 @@ const Catalog: React.FC = () => {
         </div>
 
         {/* Панель управления отображением */}
-        <div className="flex justify-between items-center mb-6 sticky top-16 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 py-3 -mx-4 px-4 border-b border-border">
-          <div className="text-sm text-muted-foreground">
-            Найдено товаров: {filteredProducts.length}
+        <div className="flex justify-between items-center mb-4 sticky top-16 bg-background/95 backdrop-blur z-10 py-3 border-b border-border">
+          <div className="text-xs text-muted-foreground">
+            Найдено: {filteredProducts.length}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setViewMode('grid')}
             >
               <Grid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setViewMode('list')}
             >
               <List className="h-4 w-4" />
@@ -190,96 +195,113 @@ const Catalog: React.FC = () => {
         {/* Каталог товаров */}
         {isLoading ? (
           <div className="text-center py-12">
-            <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Загрузка товаров...</h3>
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-foreground mb-1">Загрузка товаров...</h3>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12">
-            <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-foreground mb-1">
               Товары не найдены
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Попробуйте изменить параметры поиска или фильтры
             </p>
           </div>
         ) : (
-          <div className={`grid gap-4 sm:gap-6 ${
+          <div className={`grid gap-3 ${
             viewMode === 'grid' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
               : 'grid-cols-1'
           }`}>
             {filteredProducts.map((product) => (
-              <Card key={product.id} className={`hover:shadow-lg transition-shadow overflow-hidden ${
-                viewMode === 'list' ? 'flex flex-col sm:flex-row' : ''
-              }`}>
-                <div className={viewMode === 'list' ? 'w-full sm:w-56 flex-shrink-0' : ''}>
-                  <CardHeader className={`p-4 ${viewMode === 'list' ? 'pb-2' : ''}`}>
-                    <div className={`bg-muted rounded-xl flex items-center justify-center overflow-hidden ${
-                      viewMode === 'list' ? 'aspect-[16/10] sm:aspect-square w-full' : 'aspect-square'
-                    }`}>
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <Package className={`text-muted-foreground ${
-                          viewMode === 'list' ? 'h-12 w-12' : 'h-16 w-16'
-                        }`} />
-                      )}
+              viewMode === 'grid' ? (
+                // Компактная карточка как на главной - адаптированная для тёмной темы
+                <div key={product.id} className="group bg-card rounded-lg border border-border overflow-hidden product-card-hover dark:shadow-none">
+                  <Link to={`/catalog`} className="block relative aspect-square bg-secondary/50 dark:bg-secondary/20 overflow-hidden">
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="h-10 w-10 text-muted-foreground/30" />
+                      </div>
+                    )}
+                    {product.inStock ? (
+                      <span className="absolute top-2 left-2 w-2 h-2 bg-green-500 rounded-full" />
+                    ) : (
+                      <span className="absolute top-2 left-2 w-2 h-2 bg-muted-foreground/50 rounded-full" />
+                    )}
+                  </Link>
+                  <div className="p-3">
+                    {product.brand && (
+                      <p className="text-[10px] text-primary font-medium uppercase tracking-wide mb-1">{product.brand}</p>
+                    )}
+                    <Link to={`/catalog`}>
+                      <h3 className="text-xs font-medium text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors min-h-[32px]">
+                        {product.name}
+                      </h3>
+                    </Link>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-foreground">
+                        {product.price.toLocaleString('ru-RU')} ₽
+                      </span>
+                      <Button 
+                        size="sm" 
+                        className="h-7 px-2 shadow-primary dark:shadow-none"
+                        onClick={() => handleAddToCart(product)}
+                        disabled={!product.inStock}
+                      >
+                        <ShoppingCart className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                  </CardHeader>
+                  </div>
                 </div>
-                
-                <div className="flex-1">
-                  <CardHeader className={`${viewMode === 'list' ? 'pt-0' : 'pt-0'} px-4`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <CardTitle className="text-lg sm:text-lg line-clamp-2">
-                      {product.name}
-                      </CardTitle>
-                      <Badge variant={product.inStock ? "default" : "secondary"} className="shrink-0">
+              ) : (
+                // Списочный вид - адаптированный для тёмной темы
+                <div key={product.id} className="flex gap-4 bg-card rounded-lg border border-border p-3 product-card-hover dark:shadow-none">
+                  <Link to={`/catalog`} className="w-24 h-24 bg-secondary/50 dark:bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="h-8 w-8 text-muted-foreground/30" />
+                      </div>
+                    )}
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        {product.brand && (
+                          <p className="text-[10px] text-primary font-medium uppercase tracking-wide">{product.brand}</p>
+                        )}
+                        <h3 className="text-sm font-medium text-foreground line-clamp-1">{product.name}</h3>
+                      </div>
+                      <Badge variant={product.inStock ? "default" : "secondary"} className="text-[10px] shrink-0">
                         {product.inStock ? "В наличии" : "Нет"}
                       </Badge>
                     </div>
-                    <CardDescription className="line-clamp-2">
-                      {product.description}
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="p-4 pt-0">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl sm:text-2xl font-bold text-primary">
-                          {product.price.toLocaleString('ru-RU')} ₽
-                        </span>
-                        <div className="text-xs text-muted-foreground">
-                          {product.brand || ''}
-                        </div>
-                      </div>
-                      
-                      <div className="text-sm text-muted-foreground grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                        {product.volume && <p>Объем: {product.volume}</p>}
-                        {product.strength && <p>Крепость: {product.strength}</p>}
-                        {product.category && <p>Категория: {product.category}</p>}
-                        {product.brand && <p>Бренд: {product.brand}</p>}
-                      </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-base font-bold text-foreground">
+                        {product.price.toLocaleString('ru-RU')} ₽
+                      </span>
+                      <Button 
+                        size="sm" 
+                        className="h-8 shadow-primary dark:shadow-none"
+                        onClick={() => handleAddToCart(product)}
+                        disabled={!product.inStock}
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-1" />
+                        В корзину
+                      </Button>
                     </div>
-                  </CardContent>
-                  
-                  <CardFooter className="p-4 pt-0">
-                    <Button 
-                      className="w-full" 
-                      onClick={() => handleAddToCart(product)}
-                      disabled={!product.inStock}
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      В корзину
-                    </Button>
-                  </CardFooter>
+                  </div>
                 </div>
-              </Card>
+              )
             ))}
           </div>
         )}

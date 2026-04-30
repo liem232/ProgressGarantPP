@@ -34,7 +34,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <AuthProvider>
           <CartProvider>
             <Toaster />

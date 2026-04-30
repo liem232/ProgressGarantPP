@@ -56,13 +56,13 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
+      <Card className="w-full max-w-md shadow-elevation-2">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 bg-gradient-to-br from-primary to-primary-glow rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl"><img src="img/logooo.png" alt="" /></span>
+          <div className="mx-auto mb-4 w-12 h-12 bg-primary rounded-lg flex items-center justify-center shadow-primary">
+            <img src="img/logooo.png" alt="" className="w-7 h-7 object-contain brightness-0 invert" />
           </div>
-          <CardTitle className="text-2xl">Вход в систему</CardTitle>
+          <CardTitle className="text-xl font-bold">Вход в систему</CardTitle>
           <CardDescription>
             Войдите в свой аккаунт ПрогрессГарант
           </CardDescription>
@@ -120,7 +120,7 @@ const Login: React.FC = () => {
           <CardFooter className="flex flex-col space-y-4">
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full shadow-primary" 
               disabled={isLoading}
             >
               {isLoading ? (
@@ -135,7 +135,7 @@ const Login: React.FC = () => {
             
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Нет аккаунта? </span>
-              <Link to="/register" className="text-primary hover:underline">
+              <Link to="/register" className="text-primary hover:underline font-medium">
                 Зарегистрироваться
               </Link>
             </div>
