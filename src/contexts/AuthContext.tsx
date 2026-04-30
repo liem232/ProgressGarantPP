@@ -18,6 +18,7 @@ interface User {
   lastName?: string;
   phone?: string;
   photoURL?: string;
+  isBlocked?: boolean;
 }
 
 interface AuthContextType {
@@ -26,6 +27,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (userData: RegisterData) => Promise<boolean>;
+  updateUser: (updates: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isManager: boolean;
@@ -61,7 +63,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const savedUser = localStorage.getItem('progressgarant_user');
       if (savedUser) {
         try {
-          setUser(JSON.parse(savedUser));
+          const parsedUser = JSON.parse(savedUser);
+          // Проверка на блокировку
+          if (parsedUser.isBlocked) {
+            localStorage.removeItem('progressgarant_user');
+            setError('Ваш аккаунт заблокирован. Обратитесь к администратору.');
+          } else {
+            setUser(parsedUser);
+          }
         } catch {
           localStorage.removeItem('progressgarant_user');
         }
@@ -80,6 +89,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (userDoc.exists()) {
           const userData = userDoc.data() as Omit<User, 'id'>;
+          // Проверка на блокировку
+          if (userData.isBlocked) {
+            await signOut(auth);
+            setError('Ваш аккаунт заблокирован. Обратитесь к администратору.');
+            return;
+          }
           setUser({
             id: fbUser.uid,
             ...userData,
@@ -130,6 +145,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const savedUsers = JSON.parse(localStorage.getItem('progressgarant_users') || '[]');
       const foundUser = savedUsers.find((u: any) => u.email === email && u.password === password);
       if (foundUser) {
+        // Проверка на блокировку
+        if (foundUser.isBlocked) {
+          setError('Ваш аккаунт заблокирован. Обратитесь к администратору.');
+          return false;
+        }
         const { password: _, ...userWithoutPassword } = foundUser;
         setUser(userWithoutPassword);
         localStorage.setItem('progressgarant_user', JSON.stringify(userWithoutPassword));
@@ -216,12 +236,63 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateUser = async (updates: Partial<User>): Promise<void> => {
+    if (!user) return;
+
+    if (!isFirebaseConfigured || !auth || !db) {
+      // Fallback to localStorage
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      localStorage.setItem('progressgarant_user', JSON.stringify(updatedUser));
+      
+      // Также обновляем в общем массиве пользователей
+      const savedUsers = JSON.parse(localStorage.getItem('progressgarant_users') || '[]');
+      const updatedUsers = savedUsers.map((u: any) => 
+        u.id === user.id ? { ...u, ...updates } : u
+      );
+      localStorage.setItem('progressgarant_users', JSON.stringify(updatedUsers));
+      return;
+    }
+
+    try {
+      // Update Firestore
+      const userDocRef = doc(db, 'users', user.id);
+      await setDoc(userDocRef, updates, { merge: true });
+      
+      // Update local state
+      setUser({ ...user, ...updates });
+      
+      // Также сохраняем в localStorage для надежности
+      const updatedUser = { ...user, ...updates };
+      localStorage.setItem('progressgarant_user', JSON.stringify(updatedUser));
+    } catch (err: any) {
+      // При ошибке прав доступа используем localStorage fallback
+      if (err.code === 'permission-denied' || err.message?.includes('permissions')) {
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+        localStorage.setItem('progressgarant_user', JSON.stringify(updatedUser));
+        
+        // Обновляем в массиве пользователей
+        const savedUsers = JSON.parse(localStorage.getItem('progressgarant_users') || '[]');
+        const updatedUsers = savedUsers.map((u: any) => 
+          u.id === user.id ? { ...u, ...updates } : u
+        );
+        localStorage.setItem('progressgarant_users', JSON.stringify(updatedUsers));
+        return;
+      }
+      
+      setError(err.message || 'Ошибка обновления профиля');
+      throw err;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     firebaseUser,
     login,
     logout,
     register,
+    updateUser,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
     isManager: user?.role === 'manager' || user?.role === 'admin',

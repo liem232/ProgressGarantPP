@@ -18,7 +18,8 @@ import {
   FileText,
   Briefcase,
   Newspaper,
-  Info
+  Info,
+  MessageSquare
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -204,6 +205,20 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
                     )}
                   </span>
                 </button>
+              )}
+
+              {/* Чаты для менеджеров и админов */}
+              {(isManager || isAdmin) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className={`relative h-10 w-10 ${mutedTextClass} hover:text-primary`}
+                >
+                  <Link to="/manager/chat">
+                    <MessageSquare className="h-5 w-5" />
+                  </Link>
+                </Button>
               )}
 
               {/* Корзина */}

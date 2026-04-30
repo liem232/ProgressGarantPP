@@ -48,13 +48,6 @@ const ManagerChat: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check authorization
-  useEffect(() => {
-    if (!isManager) {
-      navigate('/');
-    }
-  }, [isManager, navigate]);
-
   // Load threads and build user list
   useEffect(() => {
     if (!isManager || !user?.id) return;
@@ -259,7 +252,22 @@ const ManagerChat: React.FC = () => {
   };
 
   if (!isManager) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background py-8">
+        <div className="container mx-auto px-4 text-center">
+          <Card className="max-w-md mx-auto">
+            <CardContent className="py-12">
+              <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Доступ ограничен</h2>
+              <p className="text-muted-foreground mb-4">
+                Эта страница доступна только менеджерам и администраторам
+              </p>
+              <Button onClick={() => navigate('/')}>На главную</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (

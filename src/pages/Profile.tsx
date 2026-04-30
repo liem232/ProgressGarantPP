@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +7,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { 
   User, Package, Clock, CheckCircle2, XCircle, LogOut,
   MapPin, Phone, Mail, Calendar, TrendingUp, ShoppingBag,
-  CreditCard, Truck
+  CreditCard, Truck, Camera, Edit
 } from 'lucide-react';
 import { getOrders, Order } from '@/services/ordersService';
 
@@ -53,7 +57,15 @@ const getRoleBadgeColor = (role: string) => {
 };
 
 const Profile: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
+  const { toast } = useToast();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    phone: user?.phone || '',
+    photoURL: user?.photoURL || ''
+  });
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['orders', user?.id],
@@ -62,6 +74,63 @@ const Profile: React.FC = () => {
   });
 
   if (!user) return null;
+
+  const handleSaveProfile = async () => {
+    // Валидация
+    if (editForm.firstName && editForm.firstName.length > 50) {
+      toast({
+        title: "Ошибка",
+        description: "Имя не должно превышать 50 символов",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (editForm.lastName && editForm.lastName.length > 50) {
+      toast({
+        title: "Ошибка",
+        description: "Фамилия не должна превышать 50 символов",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (editForm.phone && editForm.phone.length > 20) {
+      toast({
+        title: "Ошибка",
+        description: "Телефон не должен превышать 20 символов",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (editForm.photoURL && editForm.photoURL.length > 500) {
+      toast({
+        title: "Ошибка",
+        description: "Ссылка на аватар слишком длинная",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateUser({
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        phone: editForm.phone,
+        photoURL: editForm.photoURL
+      });
+      
+      setIsEditDialogOpen(false);
+      toast({
+        title: "Профиль обновлён",
+        description: "Ваши изменения сохранены"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось сохранить изменения",
+        variant: "destructive"
+      });
+    }
+  };
 
   const completedOrders = orders.filter(o => o.status === 'completed');
   const pendingOrders = orders.filter(o => ['pending', 'processing'].includes(o.status));
@@ -90,10 +159,24 @@ const Profile: React.FC = () => {
               <span className="text-muted-foreground text-sm">{user.email}</span>
             </div>
           </div>
-          <Button variant="outline" onClick={logout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            Выйти
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditForm({
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                phone: user.phone || '',
+                photoURL: user.photoURL || ''
+              });
+              setIsEditDialogOpen(true);
+            }} className="gap-2">
+              <Edit className="h-4 w-4" />
+              Редактировать
+            </Button>
+            <Button variant="outline" onClick={logout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Выйти
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -328,6 +411,68 @@ const Profile: React.FC = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Диалог редактирования профиля */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Редактировать профиль</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="firstName">Имя</Label>
+                <Input
+                  id="firstName"
+                  value={editForm.firstName}
+                  onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                  maxLength={50}
+                  placeholder="Ваше имя"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Фамилия</Label>
+                <Input
+                  id="lastName"
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                  maxLength={50}
+                  placeholder="Ваша фамилия"
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Телефон</Label>
+                <Input
+                  id="phone"
+                  value={editForm.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
+                    setEditForm({...editForm, phone: value});
+                  }}
+                  maxLength={20}
+                  placeholder="+7 (999) 123-45-67"
+                />
+              </div>
+              <div>
+                <Label htmlFor="photoURL">Ссылка на аватар</Label>
+                <Input
+                  id="photoURL"
+                  value={editForm.photoURL}
+                  onChange={(e) => setEditForm({...editForm, photoURL: e.target.value})}
+                  maxLength={500}
+                  placeholder="https://example.com/avatar.jpg"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Отмена
+              </Button>
+              <Button onClick={handleSaveProfile}>
+                Сохранить
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

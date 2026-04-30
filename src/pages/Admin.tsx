@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Users, Package, FileText, Clock, CheckCircle2, XCircle, Eye } from 'lucide-react';
+import { Shield, Users, Package, FileText, Clock, CheckCircle2, XCircle, Eye, Ban, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { seedProducts } from '@/services/seedService';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
 import AdminProducts from '@/components/AdminProducts';
+import { getCollection, updateDoc, getDoc } from '@/services/firestoreService';
 
 interface AdminUser {
   id: string;
@@ -20,7 +22,9 @@ interface AdminUser {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  role: string;
+  role: 'user' | 'manager' | 'admin';
+  photoURL?: string;
+  isBlocked?: boolean;
 }
 
 const statusLabels = {
@@ -58,6 +62,50 @@ const Admin: React.FC = () => {
   });
 
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+
+  // Загрузка пользователей
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!isAdmin) return;
+      setUsersLoading(true);
+      try {
+        if (isFirebaseConfigured) {
+          const usersData = await getCollection('users');
+          setUsers(usersData.map((u: any) => ({
+            id: u.id || u.uid,
+            username: u.username,
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            phone: u.phone,
+            role: u.role || 'user',
+            photoURL: u.photoURL,
+            isBlocked: u.isBlocked || false
+          })));
+        } else {
+          // Fallback к localStorage
+          const savedUsers = JSON.parse(localStorage.getItem('progressgarant_users') || '[]');
+          setUsers(savedUsers.map((u: any) => ({
+            id: u.id,
+            username: u.username,
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            phone: u.phone,
+            role: u.role || 'user',
+            photoURL: u.photoURL,
+            isBlocked: u.isBlocked || false
+          })));
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки пользователей:', error);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+    loadUsers();
+  }, [isAdmin]);
 
   const handleSeedProducts = async () => {
     if (!isFirebaseConfigured) {
@@ -99,6 +147,64 @@ const Admin: React.FC = () => {
       toast({
         title: "Ошибка",
         description: err.message || "Не удалось обновить статус",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleBlock = async (userId: string, isBlocked: boolean) => {
+    try {
+      if (isFirebaseConfigured) {
+        await updateDoc('users', userId, { isBlocked: !isBlocked });
+      } else {
+        const savedUsers = JSON.parse(localStorage.getItem('progressgarant_users') || '[]');
+        const updatedUsers = savedUsers.map((u: any) => 
+          u.id === userId ? { ...u, isBlocked: !isBlocked } : u
+        );
+        localStorage.setItem('progressgarant_users', JSON.stringify(updatedUsers));
+      }
+      
+      setUsers(users.map(u => 
+        u.id === userId ? { ...u, isBlocked: !isBlocked } : u
+      ));
+      
+      toast({
+        title: isBlocked ? "Пользователь разблокирован" : "Пользователь заблокирован",
+        description: isBlocked ? "Доступ восстановлен" : "Доступ ограничен",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Ошибка",
+        description: err.message || "Не удалось обновить статус блокировки",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleChangeRole = async (userId: string, newRole: 'user' | 'manager' | 'admin') => {
+    try {
+      if (isFirebaseConfigured) {
+        await updateDoc('users', userId, { role: newRole });
+      } else {
+        const savedUsers = JSON.parse(localStorage.getItem('progressgarant_users') || '[]');
+        const updatedUsers = savedUsers.map((u: any) => 
+          u.id === userId ? { ...u, role: newRole } : u
+        );
+        localStorage.setItem('progressgarant_users', JSON.stringify(updatedUsers));
+      }
+      
+      setUsers(users.map(u => 
+        u.id === userId ? { ...u, role: newRole } : u
+      ));
+      
+      toast({
+        title: "Роль обновлена",
+        description: `Новая роль: ${newRole === 'admin' ? 'Администратор' : newRole === 'manager' ? 'Менеджер' : 'Пользователь'}`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Ошибка",
+        description: err.message || "Не удалось обновить роль",
         variant: "destructive",
       });
     }
@@ -319,7 +425,13 @@ const Admin: React.FC = () => {
 
           <TabsContent value="users" className="mt-6">
             <div className="space-y-6">
-              {users.length === 0 ? (
+              {usersLoading ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p className="text-muted-foreground">Загрузка пользователей...</p>
+                  </CardContent>
+                </Card>
+              ) : users.length === 0 ? (
                 <Card>
                   <CardContent className="text-center py-8">
                     <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -327,21 +439,85 @@ const Admin: React.FC = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {users.map((user) => (
-                    <Card key={user.id}>
+                    <Card key={user.id} className={user.isBlocked ? 'opacity-60' : ''}>
                       <CardHeader>
-                        <CardTitle className="text-lg">
-                          {user.firstName || user.username}
-                          {user.lastName && ` ${user.lastName}`}
-                        </CardTitle>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={user.photoURL} />
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {(user.firstName?.[0] || user.username[0]).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <CardTitle className="text-lg">
+                              {user.firstName || user.username}
+                              {user.lastName && ` ${user.lastName}`}
+                            </CardTitle>
+                            {user.isBlocked && (
+                              <Badge variant="destructive" className="mt-1">
+                                <Ban className="h-3 w-3 mr-1" />
+                                Заблокирован
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2 text-sm">
-                          <p><span className="font-medium">Логин:</span> {user.username}</p>
-                          <p><span className="font-medium">Email:</span> {user.email}</p>
-                          {user.phone && <p><span className="font-medium">Телефон:</span> {user.phone}</p>}
-                          <Badge variant="outline">{user.role === 'admin' ? 'Администратор' : 'Пользователь'}</Badge>
+                        <div className="space-y-3">
+                          <div className="space-y-1 text-sm">
+                            <p><span className="font-medium">Логин:</span> {user.username}</p>
+                            <p><span className="font-medium">Email:</span> {user.email}</p>
+                            {user.phone && <p><span className="font-medium">Телефон:</span> {user.phone}</p>}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={user.role === 'admin' ? 'destructive' : user.role === 'manager' ? 'secondary' : 'outline'}
+                            >
+                              <ShieldCheck className="h-3 w-3 mr-1" />
+                              {user.role === 'admin' ? 'Администратор' : user.role === 'manager' ? 'Менеджер' : 'Пользователь'}
+                            </Badge>
+                          </div>
+
+                          <div className="flex flex-col gap-2 pt-2 border-t">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Роль:</span>
+                              <Select
+                                value={user.role}
+                                onValueChange={(value) => handleChangeRole(user.id, value as any)}
+                              >
+                                <SelectTrigger className="w-full h-8 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="user">Пользователь</SelectItem>
+                                  <SelectItem value="manager">Менеджер</SelectItem>
+                                  <SelectItem value="admin">Администратор</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <Button
+                              variant={user.isBlocked ? "outline" : "destructive"}
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleToggleBlock(user.id, user.isBlocked || false)}
+                            >
+                              {user.isBlocked ? (
+                                <>
+                                  <ShieldCheck className="h-4 w-4 mr-2" />
+                                  Разблокировать
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  Заблокировать
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
