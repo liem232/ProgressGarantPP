@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -63,6 +64,7 @@ const Admin: React.FC = () => {
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [roleConfirmDialog, setRoleConfirmDialog] = useState<{ userId: string; newRole: 'user' | 'manager' | 'admin' } | null>(null);
 
   // Загрузка пользователей
   useEffect(() => {
@@ -181,7 +183,14 @@ const Admin: React.FC = () => {
     }
   };
 
-  const handleChangeRole = async (userId: string, newRole: 'user' | 'manager' | 'admin') => {
+  const handleChangeRole = (userId: string, newRole: 'user' | 'manager' | 'admin') => {
+    setRoleConfirmDialog({ userId, newRole });
+  };
+
+  const confirmRoleChange = async () => {
+    if (!roleConfirmDialog) return;
+    
+    const { userId, newRole } = roleConfirmDialog;
     try {
       if (isFirebaseConfigured) {
         await updateDoc('users', userId, { role: newRole });
@@ -207,6 +216,8 @@ const Admin: React.FC = () => {
         description: err.message || "Не удалось обновить роль",
         variant: "destructive",
       });
+    } finally {
+      setRoleConfirmDialog(null);
     }
   };
 
@@ -529,6 +540,26 @@ const Admin: React.FC = () => {
           </TabsContent>
 
         </Tabs>
+
+        {/* Dialog подтверждения смены роли */}
+        <Dialog open={!!roleConfirmDialog} onOpenChange={(open) => !open && setRoleConfirmDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Подтверждение смены роли</DialogTitle>
+              <DialogDescription>
+                Вы действительно хотите изменить роль пользователя? Это действие изменит права доступа.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRoleConfirmDialog(null)}>
+                Отмена
+              </Button>
+              <Button onClick={confirmRoleChange}>
+                Подтвердить
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

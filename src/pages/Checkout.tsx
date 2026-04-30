@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { createOrder } from '@/services/ordersService';
 import { orderSchema } from '@/lib/validation';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 
 const Checkout: React.FC = () => {
   const [orderData, setOrderData] = useState({
@@ -263,14 +264,11 @@ const Checkout: React.FC = () => {
                   {orderData.deliveryMethod === 'delivery' && (
                     <div className="mt-4">
                       <Label htmlFor="address">Адрес доставки *</Label>
-                      <Input
-                        id="address"
-                        name="address"
+                      <AddressAutocomplete
                         value={orderData.address}
-                        onChange={handleInputChange}
-                        required={orderData.deliveryMethod === 'delivery'}
-                        maxLength={200}
-                        placeholder="Улица, дом, квартира"
+                        onChange={(value) => setOrderData(prev => ({ ...prev, address: value }))}
+                        placeholder="Начните вводить адрес (улица, дом, квартира)"
+                        className="w-full"
                       />
                     </div>
                   )}
