@@ -188,6 +188,7 @@ const AdminProducts: React.FC = () => {
         {isLoading ? (
           <div className="text-center py-8">Загрузка...</div>
         ) : (
+          <div className="overflow-x-auto -mx-6 px-6">
           <Table>
             <TableHeader>
               <TableRow>
@@ -248,6 +249,7 @@ const AdminProducts: React.FC = () => {
               )}
             </TableBody>
           </Table>
+          </div>
         )}
       </CardContent>
 

@@ -287,7 +287,7 @@ const ChatWidget: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 text-primary-foreground hover:bg-primary-foreground/20 lg:h-9 lg:w-9"
+                  className="h-10 w-10 text-foreground lg:h-9 lg:w-9"
                   onClick={() => setIsOpen(false)}
                 >
                   <X className="h-5 w-5 lg:h-4 lg:w-4" />
@@ -436,23 +436,6 @@ const ChatWidget: React.FC = () => {
             {/* Input Area */}
             <div className="p-4 border-t bg-card shrink-0 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               <div className="flex items-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-
                 <div className="flex-1 relative">
                   <Input
                     ref={inputRef}

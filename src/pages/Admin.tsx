@@ -227,12 +227,11 @@ const Admin: React.FC = () => {
         <h1 className="text-3xl font-bold text-foreground mb-8">Админ-панель</h1>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            <TabsTrigger value="overview">Обзор</TabsTrigger>
-            <TabsTrigger value="orders">Заказы ({orders.length})</TabsTrigger>
-            <TabsTrigger value="products">Товары</TabsTrigger>
-            <TabsTrigger value="users">Пользователи ({users.length})</TabsTrigger>
-            <TabsTrigger value="news">Новости</TabsTrigger>
+          <TabsList className="flex flex-wrap w-full gap-1 sm:gap-2">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3">Обзор</TabsTrigger>
+            <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 sm:px-3">Заказы ({orders.length})</TabsTrigger>
+            <TabsTrigger value="products" className="text-xs sm:text-sm px-2 sm:px-3">Товары</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3">Пользователи ({users.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -336,7 +335,7 @@ const Admin: React.FC = () => {
                               })}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                             <Select
                               value={order.status}
                               onValueChange={(value) => handleUpdateStatus(order.id, value as Order['status'])}
@@ -354,9 +353,11 @@ const Admin: React.FC = () => {
                             <Button
                               variant="outline"
                               size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-4 w-4 sm:mr-2" />
+                              <span className="sm:hidden">Подробнее</span>
                             </Button>
                           </div>
                         </div>
@@ -527,19 +528,6 @@ const Admin: React.FC = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="news" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Управление новостями
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Функционал управления новостями будет добавлен позже</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </div>
