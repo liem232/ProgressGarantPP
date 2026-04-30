@@ -31,7 +31,7 @@ const ManagerOrders: React.FC = () => {
   const queryClient = useQueryClient();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  const canAccess = isManager && !isAdmin;
+  const canAccess = isManager;
 
   const { data: orders = [], isLoading, error } = useQuery<Order[]>({
     queryKey: ['orders', 'manager'],
