@@ -159,13 +159,24 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
               <div className="hidden lg:flex flex-1 max-w-xl mx-6">
                 <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Искать на ПрогрессГарант"
-                    className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary border-none focus:ring-2 focus:ring-primary/20 text-sm"
-                    onClick={() => navigate('/catalog')}
-                    readOnly
-                  />
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const query = formData.get('search') as string;
+                      if (query.trim()) {
+                        navigate(`/catalog?search=${encodeURIComponent(query.trim())}`);
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    <input
+                      name="search"
+                      type="text"
+                      placeholder="Искать на ПрогрессГарант"
+                      className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary border-none focus:ring-2 focus:ring-primary/20 text-sm"
+                    />
+                  </form>
                 </div>
               </div>
             )}
@@ -194,15 +205,6 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
                   </span>
                 </button>
               )}
-
-              {/* Избранное */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-10 w-10 ${mutedTextClass} hover:text-primary hidden sm:flex`}
-              >
-                <Heart className="h-5 w-5" />
-              </Button>
 
               {/* Корзина */}
               <Button

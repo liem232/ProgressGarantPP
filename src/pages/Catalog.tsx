@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { ShoppingCart, Search, Filter, Package, Grid, List } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { categories, brands } from '@/data/products';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts } from '@/services/productsService';
 
+// Функция санитизации поискового запроса
+const sanitizeSearchQuery = (query: string): string => {
+  // Удаляем потенциально опасные символы и HTML-теги
+  return query
+    .replace(/[<>\"'&]/g, '') // Удаляем < > " ' &
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Удаляем script теги
+    .replace(/<\/?[^>]+(>|$)/g, '') // Удаляем все HTML теги
+    .trim()
+    .slice(0, 100); // Ограничиваем длину до 100 символов
+};
+
 const Catalog: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все товары');
   const [selectedBrand, setSelectedBrand] = useState('Все бренды');
@@ -22,7 +35,17 @@ const Catalog: React.FC = () => {
   const [sortBy, setSortBy] = useState('name');
 
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
+
+  // Получаем поисковый запрос из URL при загрузке
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      const sanitizedQuery = sanitizeSearchQuery(searchFromUrl);
+      setSearchTerm(sanitizedQuery);
+    }
+  }, [searchParams]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
@@ -105,7 +128,7 @@ const Catalog: React.FC = () => {
               <Input
                 placeholder="Поиск товаров..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(sanitizeSearchQuery(e.target.value))}
                 className="pl-10 h-9 text-sm"
               />
             </div>
@@ -220,11 +243,18 @@ const Catalog: React.FC = () => {
                 <div key={product.id} className="group bg-card rounded-lg border border-border overflow-hidden product-card-hover dark:shadow-none">
                   <Link to={`/catalog`} className="block relative aspect-square bg-secondary/50 dark:bg-secondary/20 overflow-hidden">
                     {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className={`object-cover w-full h-full group-hover:scale-105 transition-transform duration-300 ${!isAuthenticated ? 'blur-sm' : ''}`}
+                        />
+                        {!isAuthenticated && (
+                          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center">
+                            <span className="text-white text-xs font-medium bg-black/50 px-3 py-1.5 rounded-full">Авторизуйтесь</span>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Package className="h-10 w-10 text-muted-foreground/30" />
@@ -263,9 +293,16 @@ const Catalog: React.FC = () => {
               ) : (
                 // Списочный вид - адаптированный для тёмной темы
                 <div key={product.id} className="flex gap-4 bg-card rounded-lg border border-border p-3 product-card-hover dark:shadow-none">
-                  <Link to={`/catalog`} className="w-24 h-24 bg-secondary/50 dark:bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
+                  <Link to={`/catalog`} className="relative w-24 h-24 bg-secondary/50 dark:bg-secondary/20 rounded-lg overflow-hidden flex-shrink-0">
                     {product.image ? (
-                      <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
+                      <>
+                        <img src={product.image} alt={product.name} className={`object-cover w-full h-full ${!isAuthenticated ? 'blur-sm' : ''}`} />
+                        {!isAuthenticated && (
+                          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center">
+                            <span className="text-white text-[10px] font-medium bg-black/50 px-2 py-1 rounded-full">Войти</span>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Package className="h-8 w-8 text-muted-foreground/30" />

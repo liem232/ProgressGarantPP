@@ -276,6 +276,7 @@ const Partners: React.FC = () => {
                       value={formData.companyName}
                       onChange={handleInputChange}
                       required
+                      maxLength={100}
                       placeholder="ООО 'Название'"
                     />
                   </div>
@@ -287,6 +288,7 @@ const Partners: React.FC = () => {
                       value={formData.contactPerson}
                       onChange={handleInputChange}
                       required
+                      maxLength={100}
                       placeholder="Имя Фамилия"
                     />
                   </div>
@@ -302,6 +304,7 @@ const Partners: React.FC = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       required
+                      maxLength={20}
                       placeholder="+7 (999) 123-45-67"
                     />
                   </div>
@@ -314,6 +317,7 @@ const Partners: React.FC = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
+                      maxLength={100}
                       placeholder="your@email.com"
                     />
                   </div>
@@ -326,6 +330,7 @@ const Partners: React.FC = () => {
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
+                    maxLength={200}
                     placeholder="Город, улица, дом"
                   />
                 </div>
@@ -373,6 +378,7 @@ const Partners: React.FC = () => {
                     name="message"
                     value={formData.message}
                     onChange={handleInputChange}
+                    maxLength={1000}
                     placeholder="Расскажите о ваших планах, ожиданиях от сотрудничества"
                     rows={4}
                   />

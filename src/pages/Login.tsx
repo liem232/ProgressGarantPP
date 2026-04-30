@@ -84,6 +84,7 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                maxLength={100}
                 placeholder="Введите ваш email"
               />
             </div>
@@ -97,6 +98,8 @@ const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={6}
+                  maxLength={50}
                   placeholder="Введите ваш пароль"
                 />
                 <Button

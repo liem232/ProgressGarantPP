@@ -185,6 +185,7 @@ const Checkout: React.FC = () => {
                         value={orderData.firstName}
                         onChange={handleInputChange}
                         required
+                        maxLength={50}
                         placeholder="Ваше имя"
                       />
                     </div>
@@ -196,6 +197,7 @@ const Checkout: React.FC = () => {
                         value={orderData.lastName}
                         onChange={handleInputChange}
                         required
+                        maxLength={50}
                         placeholder="Ваша фамилия"
                       />
                     </div>
@@ -209,8 +211,12 @@ const Checkout: React.FC = () => {
                         name="phone"
                         type="tel"
                         value={orderData.phone}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
+                          handleInputChange({ target: { name: 'phone', value } } as React.ChangeEvent<HTMLInputElement>);
+                        }}
                         required
+                        maxLength={20}
                         placeholder="+7 (999) 123-45-67"
                       />
                     </div>
@@ -223,6 +229,7 @@ const Checkout: React.FC = () => {
                         value={orderData.email}
                         onChange={handleInputChange}
                         required
+                        maxLength={100}
                         placeholder="your@email.com"
                       />
                     </div>
@@ -262,6 +269,7 @@ const Checkout: React.FC = () => {
                         value={orderData.address}
                         onChange={handleInputChange}
                         required={orderData.deliveryMethod === 'delivery'}
+                        maxLength={200}
                         placeholder="Улица, дом, квартира"
                       />
                     </div>
@@ -308,6 +316,7 @@ const Checkout: React.FC = () => {
                     name="comment"
                     value={orderData.comment}
                     onChange={handleInputChange}
+                    maxLength={500}
                     placeholder="Дополнительная информация для курьера или менеджера"
                     rows={3}
                   />

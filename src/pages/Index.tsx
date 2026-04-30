@@ -19,11 +19,13 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts } from '@/services/productsService';
 
 const Index = () => {
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
   const { data: products = [] } = useQuery({
@@ -187,11 +189,18 @@ const Index = () => {
       {/* Фото товара */}
       <Link to={`/catalog`} className="block relative aspect-square bg-secondary/50 dark:bg-secondary/20 overflow-hidden">
         {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-          />
+          <>
+            <img
+              src={product.image}
+              alt={product.name}
+              className={`object-cover w-full h-full group-hover:scale-105 transition-transform duration-300 ${!isAuthenticated ? 'blur-sm' : ''}`}
+            />
+            {!isAuthenticated && (
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center">
+                <span className="text-white text-xs font-medium bg-black/50 px-3 py-1.5 rounded-full">Авторизуйтесь</span>
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package className="h-12 w-12 text-muted-foreground/30" />
@@ -264,7 +273,7 @@ const Index = () => {
             >
               {/* Фон - изображение на весь экран */}
               <div 
-                className="absolute inset-0 bg-cover bg-center"
+                className={`absolute inset-0 bg-cover bg-center ${!isAuthenticated ? 'blur-[2px]' : ''}`}
                 style={{ backgroundImage: `url(${slide.image})` }}
               >
                 {/* Затемнение для читаемости текста */}
@@ -352,7 +361,7 @@ const Index = () => {
                 <img 
                   src={category.image} 
                   alt={category.title}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className={`absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isAuthenticated ? 'blur-sm' : ''}`}
                 />
                 {/* Затемнение снизу */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -361,6 +370,12 @@ const Index = () => {
                   <h3 className="text-white font-bold text-lg mb-1">{category.title}</h3>
                   <p className="text-white/90 text-sm">{category.count} товаров</p>
                 </div>
+                {/* Блюр оверлей для неавторизованных */}
+                {!isAuthenticated && (
+                  <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+                    <span className="text-white text-xs font-medium bg-black/50 px-3 py-1.5 rounded-full">Войти</span>
+                  </div>
+                )}
               </Link>
             ))}
           </div>

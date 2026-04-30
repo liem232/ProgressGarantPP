@@ -10,8 +10,8 @@ const Footer: React.FC = () => {
           {/* Логотип и описание */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-primary">
-                <img src="/img/logooo.png" alt="" className="w-5 h-5 object-contain brightness-0 invert"/>
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-primary overflow-hidden">
+                <img src="/img/logooo.png" alt="ПрогрессГарант" className="w-full h-full object-cover"/>
               </div>
               <span className="text-lg font-bold text-foreground tracking-tight">ПрогрессГарант</span>
             </Link>

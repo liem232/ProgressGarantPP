@@ -121,6 +121,7 @@ const Register: React.FC = () => {
                   type="text"
                   value={formData.firstName}
                   onChange={handleChange}
+                  maxLength={50}
                   placeholder="Имя"
                 />
               </div>
@@ -132,6 +133,7 @@ const Register: React.FC = () => {
                   type="text"
                   value={formData.lastName}
                   onChange={handleChange}
+                  maxLength={50}
                   placeholder="Фамилия"
                 />
               </div>
@@ -146,6 +148,8 @@ const Register: React.FC = () => {
                 value={formData.username}
                 onChange={handleChange}
                 required
+                minLength={3}
+                maxLength={50}
                 placeholder="Выберите логин"
               />
             </div>
@@ -159,6 +163,7 @@ const Register: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                maxLength={100}
                 placeholder="your@email.com"
               />
             </div>
@@ -171,6 +176,7 @@ const Register: React.FC = () => {
                 type="tel"
                 value={formData.phone}
                 onChange={handleChange}
+                maxLength={20}
                 placeholder="+7 (999) 123-45-67"
               />
             </div>
@@ -185,6 +191,8 @@ const Register: React.FC = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  minLength={6}
+                  maxLength={100}
                   placeholder="Минимум 6 символов"
                 />
                 <Button
@@ -213,6 +221,8 @@ const Register: React.FC = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
+                  minLength={6}
+                  maxLength={100}
                   placeholder="Повторите пароль"
                 />
                 <Button

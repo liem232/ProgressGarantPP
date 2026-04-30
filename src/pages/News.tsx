@@ -60,8 +60,8 @@ const News: React.FC = () => {
     if (savedNews) {
       setNews(JSON.parse(savedNews));
     } else {
-      // Добавляем начальные новости
-      const initialNews: NewsItem[] = [
+    // Добавляем начальные новости
+    const initialNews: NewsItem[] = [
         {
           id: '1',
           title: '🎉 Скидка 20% на премиальные бренды табака!',
@@ -185,6 +185,27 @@ const News: React.FC = () => {
     toast({
       title: "Новость удалена",
       description: "Новость успешно удалена",
+    });
+  };
+
+  const handleEditNews = () => {
+    if (!editingNews || !editingNews.title || !editingNews.content) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните заголовок и содержание новости",
+      });
+      return;
+    }
+
+    const updatedNews = news.map(item => 
+      item.id === editingNews.id ? editingNews : item
+    );
+    
+    saveNews(updatedNews);
+    setEditingNews(null);
+    toast({
+      title: "Новость обновлена",
+      description: "Новость успешно отредактирована",
     });
   };
 
@@ -315,6 +336,76 @@ const News: React.FC = () => {
               </DialogContent>
             </Dialog>
           )}
+
+          {/* Диалог редактирования новости */}
+          {editingNews && (
+            <Dialog open={!!editingNews} onOpenChange={() => setEditingNews(null)}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Редактировать новость</DialogTitle>
+                  <DialogDescription>
+                    Внесите изменения и сохраните
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-title">Заголовок *</Label>
+                    <Input
+                      id="edit-title"
+                      value={editingNews.title}
+                      onChange={(e) => setEditingNews(prev => prev ? {...prev, title: e.target.value} : null)}
+                      placeholder="Введите заголовок новости"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit-excerpt">Краткое описание</Label>
+                    <Input
+                      id="edit-excerpt"
+                      value={editingNews.excerpt}
+                      onChange={(e) => setEditingNews(prev => prev ? {...prev, excerpt: e.target.value} : null)}
+                      placeholder="Краткое описание (необязательно)"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit-category">Категория</Label>
+                    <select
+                      id="edit-category"
+                      value={editingNews.category}
+                      onChange={(e) => setEditingNews(prev => prev ? {...prev, category: e.target.value as any} : null)}
+                      className="w-full p-2 border border-input rounded-md bg-background"
+                    >
+                      <option value="news">Новость</option>
+                      <option value="action">Акция</option>
+                      <option value="announcement">Объявление</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit-content">Содержание *</Label>
+                    <Textarea
+                      id="edit-content"
+                      value={editingNews.content}
+                      onChange={(e) => setEditingNews(prev => prev ? {...prev, content: e.target.value} : null)}
+                      placeholder="Полный текст новости"
+                      rows={8}
+                    />
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditingNews(null)}>
+                    Отмена
+                  </Button>
+                  <Button onClick={handleEditNews}>
+                    Сохранить изменения
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Фильтры */}
@@ -399,7 +490,12 @@ const News: React.FC = () => {
                     
                     {isAdmin && (
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-muted-foreground hover:text-primary"
+                          onClick={() => setEditingNews(item)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
