@@ -47,6 +47,7 @@ const AdminChat: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'clients' | 'managers'>('clients');
   const [managers, setManagers] = useState<{id: string, name: string, email: string}[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check authorization
@@ -99,6 +100,13 @@ const AdminChat: React.FC = () => {
 
     return () => unsubscribe();
   }, [isAdmin, selectedUserId]);
+
+  // Auto-scroll to last message with smooth animation
+  useEffect(() => {
+    if (lastMessageRef.current && messages.length > 0) {
+      lastMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -467,13 +475,14 @@ const AdminChat: React.FC = () => {
                 <div className="space-y-4 py-4">
                   {filteredMessages.map((msg, index) => {
                     const isOwn = msg.senderId === user?.id;
+                    const isLastMessage = index === filteredMessages.length - 1;
                     const showDate =
                       index === 0 ||
                       formatDate(msg.timestamp) !==
                         formatDate(filteredMessages[index - 1]?.timestamp);
 
                     return (
-                      <div key={msg.id}>
+                      <div key={msg.id} ref={isLastMessage ? lastMessageRef : null}>
                         {showDate && (
                           <div className="flex justify-center my-4">
                             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
@@ -482,53 +491,68 @@ const AdminChat: React.FC = () => {
                           </div>
                         )}
                         <div
-                          className={`flex flex-col ${
-                            isOwn ? 'items-end' : 'items-start'
+                          className={`flex gap-2 ${
+                            isOwn ? 'flex-row-reverse' : 'flex-row'
                           }`}
                         >
+                          {/* Avatar */}
+                          <Avatar className="h-8 w-8 flex-shrink-0">
+                            <AvatarFallback className={isOwn ? 'bg-primary text-primary-foreground' : ''}>
+                              {(msg.senderName || 'U').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+
                           <div
-                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                              isOwn
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
+                            className={`flex flex-col ${
+                              isOwn ? 'items-end' : 'items-start'
                             }`}
                           >
-                            {!isOwn && (
-                              <p className="text-xs font-medium mb-1 opacity-80">
-                                {msg.senderName}
-                                <Badge variant="secondary" className="ml-2 text-[10px]">
-                                  {msg.senderRole}
-                                </Badge>
-                              </p>
-                            )}
-                            <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                            <div
+                              className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                                isOwn
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted'
+                              }`}
+                              style={{ wordBreak: 'normal' }}
+                            >
+                              {!isOwn && (
+                                <p className="text-xs font-medium mb-1 opacity-80">
+                                  {msg.senderName}
+                                  <Badge variant="secondary" className="ml-2 text-[10px]">
+                                    {msg.senderRole === 'manager' ? 'Менеджер' : msg.senderRole}
+                                  </Badge>
+                                </p>
+                              )}
+                              <p className="whitespace-pre-wrap">{msg.text.replace(/\s+/g, ' ')}</p>
 
-                            {msg.attachments && msg.attachments.length > 0 && (
-                              <div className="mt-2 space-y-1">
-                                {msg.attachments.map((att) => (
-                                  <a
-                                    key={att.id}
-                                    href={att.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`flex items-center gap-2 text-xs p-1.5 rounded ${
-                                      isOwn
-                                        ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
-                                        : 'bg-background hover:bg-muted-foreground/10'
-                                    }`}
-                                  >
-                                    <File className="h-3 w-3" />
-                                    <span className="truncate max-w-[150px]">
-                                      {att.name}
-                                    </span>
-                                  </a>
-                                ))}
-                              </div>
-                            )}
+                              {msg.attachments && msg.attachments.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {msg.attachments.map((att) => (
+                                    <a
+                                      key={att.id}
+                                      href={att.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className={`flex items-center gap-2 text-xs p-1.5 rounded ${
+                                        isOwn
+                                          ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
+                                          : 'bg-background hover:bg-muted-foreground/10'
+                                      }`}
+                                    >
+                                      <File className="h-3 w-3" />
+                                      <span className="truncate max-w-[150px]">
+                                        {att.name}
+                                      </span>
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <span className="text-xs text-muted-foreground mt-1 px-1">
+                              {formatTime(msg.timestamp)}
+                            </span>
                           </div>
-                          <span className="text-xs text-muted-foreground mt-1 px-1">
-                            {formatTime(msg.timestamp)}
-                          </span>
                         </div>
                       </div>
                     );
