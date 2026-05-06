@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Paperclip, X, File, ArrowLeft, MessageSquare, Users, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getDocById } from '@/services/firestoreService';
 import {
   uploadFile,
   ChatMessage,
@@ -46,9 +47,21 @@ const AdminChat: React.FC = () => {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [activeTab, setActiveTab] = useState<'clients' | 'managers'>('clients');
   const [managers, setManagers] = useState<{id: string, name: string, email: string}[]>([]);
+  const [profileImages, setProfileImages] = useState<{[key: string]: string}>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Получить изображение профиля пользователя
+  const getUserProfileImage = async (userId: string): Promise<string | null> => {
+    try {
+      const userDoc = await getDocById('users', userId) as any;
+      return userDoc?.profileImage || null;
+    } catch (error) {
+      console.error('Error fetching user profile image:', error);
+      return null;
+    }
+  };
 
   // Check authorization
   useEffect(() => {
@@ -114,6 +127,23 @@ const AdminChat: React.FC = () => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, selectedUserId]);
+
+  // Load profile images for message senders
+  useEffect(() => {
+    const uniqueSenderIds = [...new Set(messages.map(msg => msg.senderId))];
+    
+    uniqueSenderIds.forEach(async (senderId) => {
+      if (!profileImages[senderId]) {
+        const imageUrl = await getUserProfileImage(senderId);
+        if (imageUrl) {
+          setProfileImages(prev => ({
+            ...prev,
+            [senderId]: imageUrl
+          }));
+        }
+      }
+    });
+  }, [messages]);
 
   const buildUserList = (allThreads: ChatThread[], category: 'clients' | 'managers') => {
     const users = allThreads.map((t) => {
@@ -491,39 +521,44 @@ const AdminChat: React.FC = () => {
                           </div>
                         )}
                         <div
-                          className={`flex gap-2 ${
+                          className={`flex gap-3 items-start ${
                             isOwn ? 'flex-row-reverse' : 'flex-row'
                           }`}
                         >
                           {/* Avatar */}
-                          <Avatar className="h-8 w-8 flex-shrink-0">
-                            <AvatarFallback className={isOwn ? 'bg-primary text-primary-foreground' : ''}>
+                          <Avatar className="h-9 w-9 flex-shrink-0">
+                            <AvatarImage 
+                              src={profileImages[msg.senderId]} 
+                              alt={msg.senderName || 'User'} 
+                            />
+                            <AvatarFallback className={isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
                               {(msg.senderName || 'U').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
 
                           <div
-                            className={`flex flex-col ${
+                            className={`flex flex-col max-w-[70%] ${
                               isOwn ? 'items-end' : 'items-start'
                             }`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                              className={`rounded-lg px-4 py-2 shadow-sm ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted'
                               }`}
-                              style={{ wordBreak: 'normal' }}
                             >
                               {!isOwn && (
-                                <p className="text-xs font-medium mb-1 opacity-80">
+                                <p className="text-xs font-medium mb-1 opacity-90">
                                   {msg.senderName}
                                   <Badge variant="secondary" className="ml-2 text-[10px]">
                                     {msg.senderRole === 'manager' ? 'Менеджер' : msg.senderRole}
                                   </Badge>
                                 </p>
                               )}
-                              <p className="whitespace-pre-wrap">{msg.text.replace(/\s+/g, ' ')}</p>
+                              <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                                {msg.text.replace(/\s+/g, ' ')}
+                              </p>
 
                               {msg.attachments && msg.attachments.length > 0 && (
                                 <div className="mt-2 space-y-1">
