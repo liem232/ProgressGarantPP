@@ -350,7 +350,7 @@ const AdminChat: React.FC = () => {
                         .map((chatUser) => (
                           <div
                             key={chatUser.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                            className={`flex items-center gap-3 mx-3 p-3 rounded-lg cursor-pointer transition-colors ${
                               selectedUserId === chatUser.id
                                 ? 'bg-primary text-primary-foreground'
                                 : 'hover:bg-muted'
@@ -392,7 +392,7 @@ const AdminChat: React.FC = () => {
                         .map((chatUser) => (
                           <div
                             key={chatUser.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                            className={`flex items-center gap-3 mx-3 p-3 rounded-lg cursor-pointer transition-colors ${
                               selectedUserId === chatUser.id
                                 ? 'bg-primary text-primary-foreground'
                                 : 'hover:bg-muted'
@@ -444,7 +444,7 @@ const AdminChat: React.FC = () => {
                             .map((manager) => (
                               <div
                                 key={manager.id}
-                                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted border border-dashed border-muted-foreground/30"
+                                className="flex items-center gap-3 mx-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted border border-dashed border-muted-foreground/30"
                                 onClick={() => handleStartManagerChat(manager.id)}
                               >
                                 <Avatar className="h-10 w-10">
