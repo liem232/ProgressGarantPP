@@ -461,7 +461,7 @@ const ManagerChat: React.FC = () => {
                           </div>
                         )}
                         <div
-                          className={`flex gap-2 ${
+                          className={`flex gap-2 w-full ${
                             isOwn ? 'flex-row-reverse' : 'flex-row'
                           }`}
                         >
@@ -473,12 +473,12 @@ const ManagerChat: React.FC = () => {
                           </Avatar>
 
                           <div
-                            className={`flex flex-col max-w-[70%] ${
+                            className={`flex flex-col max-w-[70%] max-w-full ${
                               isOwn ? 'items-end' : 'items-start'
                             }`}
                           >
                             <div
-                              className={`rounded-lg px-4 py-2 shadow-sm ${
+                              className={`rounded-lg px-4 py-2 shadow-sm w-auto ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted'
@@ -499,7 +499,7 @@ const ManagerChat: React.FC = () => {
                                   )}
                                 </p>
                               )}
-                              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.text.replace(/\s+/g, ' ')}</p>
+                              <p className="whitespace-pre-wrap break-words leading-relaxed" style={{ fontSize: '14px' }}>{msg.text.replace(/\s+/g, ' ')}</p>
 
                               {msg.attachments && msg.attachments.length > 0 && (
                                 <div className="mt-2 space-y-1">
