@@ -14,7 +14,7 @@ import { seedProducts } from '@/services/seedService';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
 import AdminProducts from '@/components/AdminProducts';
-import { getCollection, updateDoc, getDoc } from '@/services/firestoreService';
+import { getCollection, updateDoc, getDocById } from '@/services/firestoreService';
 
 interface AdminUser {
   id: string;
