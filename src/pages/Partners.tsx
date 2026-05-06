@@ -386,9 +386,17 @@ const Partners: React.FC = () => {
 
                 <button 
                   type="submit" 
-                  className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-red"
+                  className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-red flex items-center justify-center"
+                  disabled={isSubmitting}
                 >
-                  Отправить заявку
+                  {isSubmitting ? (
+                    "Отправка..."
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Отправить заявку
+                    </>
+                  )}
                 </button>
               </form>
             </div>
@@ -423,7 +431,7 @@ const Partners: React.FC = () => {
                     <div>
                       <p className="font-medium">Офис</p>
                       <p className="text-muted-foreground">
-                        г. Оренбург, ул. Промышленная, 25<br />
+                        г. Оренбург, улица диагностики, 7<br />
                         Пн-Пт: 9:00-18:00
                       </p>
                     </div>

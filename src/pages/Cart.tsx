@@ -71,22 +71,27 @@ const Cart: React.FC = () => {
             {items.map((item) => (
               <div key={item.id} className="flex gap-3 bg-card rounded-lg border border-border p-3 product-card-hover dark:shadow-none">
                 {/* Изображение товара */}
-                <div className="w-20 h-20 bg-secondary/50 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-20 h-20 bg-secondary/50 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative">
                   {item.image ? (
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="object-cover w-full h-full"
+                      className={`object-cover w-full h-full ${!isAuthenticated ? 'blur-[2px]' : ''}`}
                     />
                   ) : (
                     <Package className="h-8 w-8 text-muted-foreground/50" />
+                  )}
+                  {!isAuthenticated && (
+                    <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                      <span className="text-white text-xs font-medium bg-black/50 px-2 py-1 rounded">Войдите</span>
+                    </div>
                   )}
                 </div>
 
                 {/* Информация о товаре */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-medium text-sm text-foreground line-clamp-1">
+                    <h3 className={`font-medium text-sm text-foreground line-clamp-1 ${!isAuthenticated ? 'blur-[1px]' : ''}`}>
                       {item.name}
                     </h3>
                     <Button
@@ -100,7 +105,7 @@ const Cart: React.FC = () => {
                   </div>
                   
                   {item.brand && (
-                    <p className="text-[10px] text-primary font-medium uppercase tracking-wide">{item.brand}</p>
+                    <p className={`text-[10px] text-primary font-medium uppercase tracking-wide ${!isAuthenticated ? 'blur-[1px]' : ''}`}>{item.brand}</p>
                   )}
 
                   <div className="flex items-center justify-between mt-2">
@@ -128,10 +133,10 @@ const Cart: React.FC = () => {
                     </div>
 
                     <div className="text-right">
-                      <div className="font-bold text-sm text-foreground">
+                      <div className={`font-bold text-sm text-foreground ${!isAuthenticated ? 'blur-[1px]' : ''}`}>
                         {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className={`text-xs text-muted-foreground ${!isAuthenticated ? 'blur-[1px]' : ''}`}>
                         {item.price.toLocaleString('ru-RU')} ₽/шт
                       </div>
                     </div>
@@ -157,7 +162,7 @@ const Cart: React.FC = () => {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Товары ({totalItems}):</span>
-                  <span className="font-medium">{totalPrice.toLocaleString('ru-RU')} ₽</span>
+                  <span className={`font-medium ${!isAuthenticated ? 'blur-[1px]' : ''}`}>{totalPrice.toLocaleString('ru-RU')} ₽</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Доставка:</span>
@@ -169,7 +174,7 @@ const Cart: React.FC = () => {
 
               <div className="flex justify-between text-lg font-bold mb-4">
                 <span>К оплате:</span>
-                <span className="text-foreground">
+                <span className={`text-foreground ${!isAuthenticated ? 'blur-[1px]' : ''}`}>
                   {totalPrice.toLocaleString('ru-RU')} ₽
                 </span>
               </div>

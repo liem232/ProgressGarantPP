@@ -59,8 +59,8 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
       <Card className="w-full max-w-md shadow-elevation-2">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 bg-primary rounded-lg flex items-center justify-center shadow-primary">
-            <img src="img/logooo.png" alt="" className="w-7 h-7 object-contain brightness-0 invert" />
+          <div className="mx-auto mb-4 w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-primary overflow-hidden">
+            <img src="/img/logooo.png" alt="ПрогрессГарант" className="w-full h-full object-cover" />
           </div>
           <CardTitle className="text-xl font-bold">Вход в систему</CardTitle>
           <CardDescription>
@@ -129,10 +129,10 @@ const Login: React.FC = () => {
               {isLoading ? (
                 "Вход..."
               ) : (
-                <>
+                <div className="flex items-center justify-center">
                   <LogIn className="mr-2 h-4 w-4" />
                   Войти
-                </>
+                </div>
               )}
             </Button>
             

@@ -395,8 +395,8 @@ const Index = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {popularProducts.slice(0, 5).map((product) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {popularProducts.slice(0, 4).map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
@@ -431,7 +431,7 @@ const Index = () => {
               <img 
                 src="/img/BBbanner.jpg" 
                 alt="BlackBurn Banner" 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className={`absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isAuthenticated ? 'blur-[2px]' : ''}`}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
@@ -448,7 +448,7 @@ const Index = () => {
               <img 
                 src="/img/overdoseBanner.jpg" 
                 alt="Overdose Banner" 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className={`absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isAuthenticated ? 'blur-[2px]' : ''}`}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
@@ -465,7 +465,7 @@ const Index = () => {
               <img 
                 src="/img/musthavebanner.jpg" 
                 alt="Musthave Banner" 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className={`absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isAuthenticated ? 'blur-[2px]' : ''}`}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
@@ -530,67 +530,67 @@ const Index = () => {
             <p className="text-sm text-muted-foreground">Официальные дистрибьюторы ведущих брендов</p>
           </div>
           
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {/* Карточки партнеров с подсветкой */}
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/BlackBurn.png" alt="BlackBurn" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/BlackBurn.png" alt="BlackBurn" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/musthave.png" alt="Musthave" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/musthave.png" alt="Musthave" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/overdose.png" alt="Overdose" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/overdose.png" alt="Overdose" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/nur.png" alt="NUR" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/nur.png" alt="NUR" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/adalya.png" alt="Adalya" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/adalya.png" alt="Adalya" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/mongol.png" alt="Mongol" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/mongol.png" alt="Mongol" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/sapphire.png" alt="Sapphire Crown" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/sapphire.png" alt="Sapphire Crown" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/husky.png" alt="Husky" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/husky.png" alt="Husky" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/element.png" alt="Element" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/element.png" alt="Element" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
             <a 
               href="/catalog" 
-              className="group flex items-center justify-center p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-white to-secondary/30 dark:from-card dark:to-secondary/20 rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
-              <img src="/img/rell.png" alt="Rell" className="h-16 w-auto max-w-[120px] object-contain" />
+              <img src="/img/rell.png" alt="Rell" className="h-12 sm:h-14 md:h-16 w-auto max-w-[80px] sm:max-w-[100px] md:max-w-[120px] object-contain" />
             </a>
           </div>
         </div>
