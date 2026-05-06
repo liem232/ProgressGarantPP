@@ -50,6 +50,33 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     };
   }, []);
 
+  // Пересчитываем позицию при изменении viewport (клавиатура на мобильных)
+  useEffect(() => {
+    if (showSuggestions && inputWrapperRef.current) {
+      const handleResize = () => {
+        updateDropdownPosition();
+      };
+
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleResize);
+      
+      // Для мобильных устройств с visualViewport
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleResize);
+        window.visualViewport.addEventListener('scroll', handleResize);
+      }
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleResize);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', handleResize);
+          window.visualViewport.removeEventListener('scroll', handleResize);
+        }
+      };
+    }
+  }, [showSuggestions]);
+
   // Очистка таймаута при размонтировании
   useEffect(() => {
     return () => {
