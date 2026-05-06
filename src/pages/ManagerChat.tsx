@@ -34,7 +34,7 @@ interface ChatUser {
 }
 
 const ManagerChat: React.FC = () => {
-  const { user, isManager } = useAuth();
+  const { user, isManager, isAdmin } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -271,7 +271,7 @@ const ManagerChat: React.FC = () => {
     setSelectedUserId(null);
   };
 
-  if (!isManager) {
+  if (!isManager || isAdmin) {
     return (
       <div className="min-h-screen bg-background py-8">
         <div className="container mx-auto px-4 text-center">
@@ -280,7 +280,7 @@ const ManagerChat: React.FC = () => {
               <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">Доступ ограничен</h2>
               <p className="text-muted-foreground mb-4">
-                Эта страница доступна только менеджерам и администраторам
+                Эта страница доступна только менеджерам
               </p>
               <Button onClick={() => navigate('/')}>На главную</Button>
             </CardContent>
@@ -478,11 +478,12 @@ const ManagerChat: React.FC = () => {
                             }`}
                           >
                             <div
-                              className={`max-w-[100%] rounded-lg px-4 py-2 ${
+                              className={`max-w-[80%] rounded-lg px-4 py-2 ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted'
                               }`}
+                              style={{ wordBreak: 'normal' }}
                             >
                               {!isOwn && (
                                 <p className="text-xs font-medium mb-1 opacity-80">
@@ -499,7 +500,7 @@ const ManagerChat: React.FC = () => {
                                   )}
                                 </p>
                               )}
-                              <p className="whitespace-pre-wrap">{msg.text.replace(/\s+/g, ' ')}</p>
+                              <p className="whitespace-pre-wrap break-words">{msg.text.replace(/\s+/g, ' ')}</p>
 
                               {msg.attachments && msg.attachments.length > 0 && (
                                 <div className="mt-2 space-y-1">

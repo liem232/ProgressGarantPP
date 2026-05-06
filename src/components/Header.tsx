@@ -227,10 +227,9 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  asChild
                   className={`relative h-10 w-10 ${mutedTextClass} hover:text-primary`}
                 >
-                  <Link to="/manager/chat">
+                  <Link to={isAdmin ? "/admin/chat" : "/manager/chat"}>
                     <MessageSquare className="h-5 w-5" />
                   </Link>
                 </Button>

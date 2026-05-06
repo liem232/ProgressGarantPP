@@ -302,7 +302,7 @@ const AdminChat: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 h-full">
           {/* Users List - hidden on mobile when chat is open */}
-          <Card className={`lg:col-span-1 h-full max-h-[calc(100vh-8rem)] ${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col overflow-hidden`}>
+          <Card className={`lg:col-span-1 h-full ${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col overflow-hidden`}>
             <CardHeader className="pb-2 flex-shrink-0">
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
@@ -336,8 +336,8 @@ const AdminChat: React.FC = () => {
                 </button>
               </div>
 
-              <ScrollArea className="flex-1 h-full">
-                <div className="space-y-1 px-4 py-2">
+              <ScrollArea className="h-[calc(100vh-18rem)] px-4">
+                <div className="space-y-1">
                   {activeTab === 'clients' ? (
                     // Client chats
                     chatUsers.filter((u) => u.category === 'clients').length === 0 ? (
@@ -350,7 +350,7 @@ const AdminChat: React.FC = () => {
                         .map((chatUser) => (
                           <div
                             key={chatUser.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                            className={`flex items-center gap-3 w-full p-3 rounded-lg cursor-pointer transition-colors ${
                               selectedUserId === chatUser.id
                                 ? 'bg-primary text-primary-foreground'
                                 : 'hover:bg-muted'
@@ -392,7 +392,7 @@ const AdminChat: React.FC = () => {
                         .map((chatUser) => (
                           <div
                             key={chatUser.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                            className={`flex items-center gap-3 w-full p-3 rounded-lg cursor-pointer transition-colors ${
                               selectedUserId === chatUser.id
                                 ? 'bg-primary text-primary-foreground'
                                 : 'hover:bg-muted'
@@ -444,7 +444,7 @@ const AdminChat: React.FC = () => {
                             .map((manager) => (
                               <div
                                 key={manager.id}
-                                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted border border-dashed border-muted-foreground/30"
+                                className="flex items-center gap-3 w-full p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted border border-dashed border-muted-foreground/30"
                                 onClick={() => handleStartManagerChat(manager.id)}
                               >
                                 <Avatar className="h-10 w-10">
@@ -556,7 +556,7 @@ const AdminChat: React.FC = () => {
                                   </Badge>
                                 </p>
                               )}
-                              <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                                 {msg.text.replace(/\s+/g, ' ')}
                               </p>
 
