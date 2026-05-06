@@ -27,6 +27,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [isMobile, setIsMobile] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputWrapperRef = useRef<HTMLDivElement>(null);
@@ -35,6 +36,17 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   useEffect(() => {
     setInputValue(value);
   }, [value]);
+
+  // Определяем мобильное устройство
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Закрываем подсказки при клике вне компонента
   useEffect(() => {
@@ -208,16 +220,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         )}
       </div>
 
-      {showSuggestions && suggestions.length > 0 &&
-        ReactDOM.createPortal(
+      {showSuggestions && suggestions.length > 0 && (
+        isMobile ? (
+          // На мобильных - inline позиционирование
           <div 
-            className="fixed z-[9999] bg-background border rounded-md shadow-lg max-h-60 overflow-auto"
-            style={{
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`,
-              width: `${dropdownPosition.width}px`,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
-            }}
+            className="absolute top-full left-0 right-0 z-[9999] bg-background border rounded-md shadow-lg max-h-60 overflow-auto mt-1"
+            style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}
           >
             {suggestions.map((suggestion, index) => (
               <button
@@ -230,10 +238,35 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                 <span className="text-sm">{suggestion.address}</span>
               </button>
             ))}
-          </div>,
-          document.body
+          </div>
+        ) : (
+          // На десктопе - Portal с fixed позиционированием
+          ReactDOM.createPortal(
+            <div 
+              className="fixed z-[9999] bg-background border rounded-md shadow-lg max-h-60 overflow-auto"
+              style={{
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+                width: `${dropdownPosition.width}px`,
+                boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
+              }}
+            >
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-start gap-2 border-b last:border-b-0"
+                >
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">{suggestion.address}</span>
+                </button>
+              ))}
+            </div>,
+            document.body
+          )
         )
-      }
+      )}
     </div>
   );
 };
