@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { Input } from '@/components/ui/input';
 import { Loader2, MapPin } from 'lucide-react';
 
@@ -25,8 +26,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [inputValue, setInputValue] = useState(value);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputWrapperRef = useRef<HTMLDivElement>(null);
 
   // Обновляем inputValue при изменении value снаружи
   useEffect(() => {
@@ -116,11 +119,23 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     }
   };
 
+  const updateDropdownPosition = () => {
+    if (inputWrapperRef.current) {
+      const rect = inputWrapperRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange(newValue);
     setShowSuggestions(true);
+    updateDropdownPosition();
 
     // Debounce запроса
     if (timeoutRef.current) {
@@ -141,35 +156,51 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="relative">
+      <div ref={inputWrapperRef} className="relative">
         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           value={inputValue}
           onChange={handleInputChange}
           placeholder={placeholder}
           className={`pl-10 ${className}`}
-          onFocus={() => inputValue.length >= 3 && setShowSuggestions(true)}
+          onFocus={() => {
+            if (inputValue.length >= 3) {
+              updateDropdownPosition();
+              setShowSuggestions(true);
+            }
+          }}
         />
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
         )}
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-[100] w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
-          {suggestions.map((suggestion, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => handleSuggestionClick(suggestion)}
-              className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-start gap-2 border-b last:border-b-0"
-            >
-              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <span className="text-sm">{suggestion.address}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {showSuggestions && suggestions.length > 0 &&
+        ReactDOM.createPortal(
+          <div 
+            className="fixed z-[9999] bg-background border rounded-md shadow-lg max-h-60 overflow-auto"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+              boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
+            }}
+          >
+            {suggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-start gap-2 border-b last:border-b-0"
+              >
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <span className="text-sm">{suggestion.address}</span>
+              </button>
+            ))}
+          </div>,
+          document.body
+        )
+      }
     </div>
   );
 };

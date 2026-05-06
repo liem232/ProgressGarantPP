@@ -168,156 +168,153 @@ const Checkout: React.FC = () => {
               className="space-y-6"
             >
 
-              {/* Контактные данные */}
-              <Card>
+              {/* Форма оформления заказа */}
+              <Card className="overflow-visible">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    Контактные данные
-                  </CardTitle>
+                  <CardTitle className="text-xl">Оформление заказа</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">Имя *</Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        value={orderData.firstName}
-                        onChange={handleInputChange}
-                        required
-                        maxLength={50}
-                        placeholder="Ваше имя"
-                      />
+                <CardContent className="space-y-6">
+                  {/* Контактные данные */}
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Контактные данные
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">Имя *</Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          value={orderData.firstName}
+                          onChange={handleInputChange}
+                          required
+                          maxLength={50}
+                          placeholder="Ваше имя"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Фамилия *</Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          value={orderData.lastName}
+                          onChange={handleInputChange}
+                          required
+                          maxLength={50}
+                          placeholder="Ваша фамилия"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="lastName">Фамилия *</Label>
-                      <Input
-                        id="lastName"
-                        name="lastName"
-                        value={orderData.lastName}
-                        onChange={handleInputChange}
-                        required
-                        maxLength={50}
-                        placeholder="Ваша фамилия"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="phone">Телефон *</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          value={orderData.phone}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
+                            handleInputChange({ target: { name: 'phone', value } } as React.ChangeEvent<HTMLInputElement>);
+                          }}
+                          required
+                          maxLength={20}
+                          placeholder="+7 (999) 123-45-67"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email *</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={orderData.email}
+                          onChange={handleInputChange}
+                          required
+                          maxLength={100}
+                          placeholder="your@email.com"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="phone">Телефон *</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={orderData.phone}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
-                          handleInputChange({ target: { name: 'phone', value } } as React.ChangeEvent<HTMLInputElement>);
-                        }}
-                        required
-                        maxLength={20}
-                        placeholder="+7 (999) 123-45-67"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={orderData.email}
-                        onChange={handleInputChange}
-                        required
-                        maxLength={100}
-                        placeholder="your@email.com"
-                      />
-                    </div>
+                  <Separator />
+
+                  {/* Доставка */}
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                      <Truck className="h-4 w-4" />
+                      Способ доставки
+                    </h3>
+                    <RadioGroup
+                      value={orderData.deliveryMethod}
+                      onValueChange={(value) => setOrderData(prev => ({ ...prev, deliveryMethod: value }))}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="delivery" id="delivery" />
+                        <Label htmlFor="delivery">Доставка по Оренбургу (бесплатно)</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="pickup" id="pickup" />
+                        <Label htmlFor="pickup">Самовывоз (пр-д Автоматики, 12)</Label>
+                      </div>
+                    </RadioGroup>
+
+                    {orderData.deliveryMethod === 'delivery' && (
+                      <div className="mt-4">
+                        <Label htmlFor="address">Адрес доставки *</Label>
+                        <AddressAutocomplete
+                          value={orderData.address}
+                          onChange={(value) => setOrderData(prev => ({ ...prev, address: value }))}
+                          placeholder="Начните вводить адрес (улица, дом, квартира)"
+                          className="w-full"
+                        />
+                      </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* Доставка */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Truck className="h-5 w-5" />
-                    Способ доставки
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup
-                    value={orderData.deliveryMethod}
-                    onValueChange={(value) => setOrderData(prev => ({ ...prev, deliveryMethod: value }))}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="delivery" id="delivery" />
-                      <Label htmlFor="delivery">Доставка по Оренбургу (бесплатно)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="pickup" id="pickup" />
-                      <Label htmlFor="pickup">Самовывоз (пр-д Автоматики, 12)</Label>
-                    </div>
-                  </RadioGroup>
+                  <Separator />
 
-                  {orderData.deliveryMethod === 'delivery' && (
-                    <div className="mt-4">
-                      <Label htmlFor="address">Адрес доставки *</Label>
-                      <AddressAutocomplete
-                        value={orderData.address}
-                        onChange={(value) => setOrderData(prev => ({ ...prev, address: value }))}
-                        placeholder="Начните вводить адрес (улица, дом, квартира)"
-                        className="w-full"
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  {/* Оплата */}
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-sm text-muted-foreground flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Способ оплаты
+                    </h3>
+                    <RadioGroup
+                      value={orderData.paymentMethod}
+                      onValueChange={(value) => setOrderData(prev => ({ ...prev, paymentMethod: value }))}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="cash" id="cash" />
+                        <Label htmlFor="cash">Наличными при получении</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="card" id="card" />
+                        <Label htmlFor="card">Картой при получении</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="transfer" id="transfer" />
+                        <Label htmlFor="transfer">Безналичный расчет</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
 
-              {/* Оплата */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Способ оплаты
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup
-                    value={orderData.paymentMethod}
-                    onValueChange={(value) => setOrderData(prev => ({ ...prev, paymentMethod: value }))}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="cash" id="cash" />
-                      <Label htmlFor="cash">Наличными при получении</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card">Картой при получении</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="transfer" id="transfer" />
-                      <Label htmlFor="transfer">Безналичный расчет</Label>
-                    </div>
-                  </RadioGroup>
-                </CardContent>
-              </Card>
+                  <Separator />
 
-              {/* Комментарий */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Комментарий к заказу</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    name="comment"
-                    value={orderData.comment}
-                    onChange={handleInputChange}
-                    maxLength={500}
-                    placeholder="Дополнительная информация для курьера или менеджера"
-                    rows={3}
-                  />
+                  {/* Комментарий */}
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-sm text-muted-foreground">Комментарий к заказу</h3>
+                    <Textarea
+                      name="comment"
+                      value={orderData.comment}
+                      onChange={handleInputChange}
+                      maxLength={500}
+                      placeholder="Дополнительная информация для курьера или менеджера"
+                      rows={3}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
