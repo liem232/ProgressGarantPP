@@ -290,26 +290,26 @@ const AdminChat: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4 h-[calc(100vh-8rem)]">
-        <div className="flex items-center gap-4 mb-6">
+    <div className="min-h-screen bg-background py-4 sm:py-8">
+      <div className="container mx-auto px-4 h-[calc(100vh-6rem)] max-w-7xl">
+        <div className="flex items-center gap-4 mb-4 sm:mb-6">
           <Button variant="outline" size="icon" onClick={() => navigate('/admin')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">Чаты администратора</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Чаты администратора</h1>
           <Badge variant="secondary">Admin Panel</Badge>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 h-full">
           {/* Users List - hidden on mobile when chat is open */}
-          <Card className={`lg:col-span-1 h-full ${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col`}>
-            <CardHeader className="pb-2">
+          <Card className={`lg:col-span-1 h-full max-h-[calc(100vh-8rem)] ${showMobileChat ? 'hidden lg:flex' : 'flex'} flex-col overflow-hidden`}>
+            <CardHeader className="pb-2 flex-shrink-0">
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
                 Диалоги
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-hidden">
+            <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
               {/* Tabs */}
               <div className="flex border-b">
                 <button
@@ -336,7 +336,7 @@ const AdminChat: React.FC = () => {
                 </button>
               </div>
 
-              <ScrollArea className="h-[calc(100vh-20rem)]">
+              <ScrollArea className="flex-1 h-full">
                 <div className="space-y-1 p-4">
                   {activeTab === 'clients' ? (
                     // Client chats
@@ -480,8 +480,8 @@ const AdminChat: React.FC = () => {
           </Card>
 
           {/* Chat - hidden on mobile when list is open */}
-          <Card className={`lg:col-span-2 h-full flex-col ${!showMobileChat ? 'hidden lg:flex' : 'flex'}`}>
-            <CardHeader className="pb-3 border-b">
+          <Card className={`lg:col-span-2 h-full max-h-[calc(100vh-8rem)] flex-col ${!showMobileChat ? 'hidden lg:flex' : 'flex'} overflow-hidden`}>
+            <CardHeader className="pb-3 border-b flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -500,8 +500,8 @@ const AdminChat: React.FC = () => {
             </CardHeader>
 
             {/* Messages */}
-            <CardContent className="flex-1 p-0 overflow-hidden">
-              <ScrollArea className="h-[calc(100vh-20rem)] px-4" ref={scrollRef}>
+            <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+              <ScrollArea className="flex-1 h-full px-4" ref={scrollRef}>
                 <div className="space-y-4 py-4">
                   {filteredMessages.map((msg, index) => {
                     const isOwn = msg.senderId === user?.id;
