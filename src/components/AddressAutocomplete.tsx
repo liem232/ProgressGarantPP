@@ -169,6 +169,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               setShowSuggestions(true);
             }
           }}
+          onClick={() => {
+            updateDropdownPosition();
+            if (inputValue.length >= 3 && suggestions.length > 0) {
+              setShowSuggestions(true);
+            }
+          }}
         />
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
