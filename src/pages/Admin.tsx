@@ -55,12 +55,18 @@ const Admin: React.FC = () => {
   const queryClient = useQueryClient();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isSeedingProducts, setIsSeedingProducts] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
 
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ['orders'],
     queryFn: () => getOrders(),
     enabled: isAdmin,
   });
+
+  // Фильтрация заказов по статусу
+  const filteredOrders = statusFilter === 'all' 
+    ? orders 
+    : orders.filter(order => order.status === statusFilter);
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -312,16 +318,67 @@ const Admin: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="orders" className="mt-6">
+            {/* Фильтр по статусу */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="text-xl font-semibold">Управление заказами</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Фильтр:</span>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as Order['status'] | 'all')}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Все статусы" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все заказы ({orders.length})</SelectItem>
+                    <SelectItem value="pending">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Ожидает обработки ({orders.filter(o => o.status === 'pending').length})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="processing">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        В обработке ({orders.filter(o => o.status === 'processing').length})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="completed">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Выполнен ({orders.filter(o => o.status === 'completed').length})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="cancelled">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4" />
+                        Отменен ({orders.filter(o => o.status === 'cancelled').length})
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-6">
-              {orders.length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <Card>
                   <CardContent className="text-center py-8">
                     <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Заказов пока нет</p>
+                    <p className="text-muted-foreground">
+                      {statusFilter === 'all' ? 'Заказов пока нет' : `Заказов со статусом "${statusLabels[statusFilter]}" нет`}
+                    </p>
+                    {statusFilter !== 'all' && (
+                      <Button 
+                        variant="outline" 
+                        className="mt-4" 
+                        onClick={() => setStatusFilter('all')}
+                      >
+                        Показать все заказы
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ) : (
-                orders.map((order) => {
+                filteredOrders.map((order) => {
                   const StatusIcon = statusIcons[order.status];
                   const isExpanded = expandedOrder === order.id;
                   

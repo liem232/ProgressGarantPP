@@ -208,15 +208,14 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
                 </button>
               )}
 
-              {/* Заказы для менеджеров */}
+              {/* Заказы для менеджеров и админов */}
               {(isManager || isAdmin) && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  asChild
                   className={`relative h-10 w-10 ${mutedTextClass} hover:text-primary`}
                 >
-                  <Link to="/manager/orders">
+                  <Link to={isAdmin ? "/admin" : "/manager/orders"}>
                     <Package className="h-5 w-5" />
                   </Link>
                 </Button>
