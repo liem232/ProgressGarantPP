@@ -30,6 +30,7 @@ const Chat: React.FC<ChatProps> = ({ orderId, roomName = 'Общий чат', cl
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load messages and subscribe to updates
@@ -47,10 +48,10 @@ const Chat: React.FC<ChatProps> = ({ orderId, roomName = 'Общий чат', cl
     return () => unsubscribe();
   }, [user, orderId]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to last message with smooth animation
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [messages]);
 
@@ -150,15 +151,17 @@ const Chat: React.FC<ChatProps> = ({ orderId, roomName = 'Общий чат', cl
                     {date}
                   </span>
                 </div>
-                {dateMessages.map((msg) => {
+                {dateMessages.map((msg, msgIndex) => {
                   const isOwn = msg.senderId === user?.id;
+                  const isLastMessage = msgIndex === dateMessages.length - 1 && date === Object.keys(groupedMessages)[Object.keys(groupedMessages).length - 1];
                   return (
                     <div
                       key={msg.id}
+                      ref={isLastMessage ? lastMessageRef : null}
                       className={`flex flex-col mb-3 ${isOwn ? 'items-end' : 'items-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                        className={`max-w-[80%] rounded-lg px-3 py-2 break-words overflow-hidden ${
                           isOwn
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted'
@@ -174,7 +177,7 @@ const Chat: React.FC<ChatProps> = ({ orderId, roomName = 'Общий чат', cl
                             )}
                           </p>
                         )}
-                        <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
 
                         {/* Attachments */}
                         {msg.attachments && msg.attachments.length > 0 && (

@@ -14,7 +14,7 @@ import { Package, CreditCard, Truck, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { createOrder } from '@/services/ordersService';
+import { createOrder, checkOrderLimit } from '@/services/ordersService';
 import { orderSchema } from '@/lib/validation';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 
@@ -31,6 +31,7 @@ const Checkout: React.FC = () => {
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderLimit, setOrderLimit] = useState({ allowed: true, remaining: 3 });
 
   const { items: cartItems, totalPrice: totalAmount, clearCart } = useCart();
   const { user } = useAuth();
@@ -47,6 +48,15 @@ const Checkout: React.FC = () => {
         phone: user.phone || ''
       }));
     }
+  }, [user]);
+
+  // Проверка лимита заказов при загрузке
+  useEffect(() => {
+    const checkLimit = async () => {
+      const limit = await checkOrderLimit(user?.id);
+      setOrderLimit(limit);
+    };
+    checkLimit();
   }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -82,6 +92,17 @@ const Checkout: React.FC = () => {
       toast({
         title: "Ошибка",
         description: "Корзина пуста",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Проверка лимита заказов
+    const limitCheck = await checkOrderLimit(user?.id);
+    if (!limitCheck.allowed) {
+      toast({
+        title: "Лимит заказов исчерпан",
+        description: "Вы достигли максимального количества заказов (3) на сегодня. Попробуйте оформить заказ завтра.",
         variant: "destructive"
       });
       return;
@@ -318,6 +339,23 @@ const Checkout: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Предупреждение о лимите */}
+              {!orderLimit.allowed && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    Вы достигли максимального количества заказов (3) на сегодня. 
+                    Попробуйте оформить заказ завтра.
+                  </AlertDescription>
+                </Alert>
+              )}
+              {orderLimit.allowed && orderLimit.remaining < 3 && (
+                <Alert>
+                  <AlertDescription>
+                    Осталось заказов на сегодня: {orderLimit.remaining} из 3
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Согласие */}
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -334,7 +372,7 @@ const Checkout: React.FC = () => {
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={isSubmitting || !acceptTerms}
+                disabled={isSubmitting || !acceptTerms || !orderLimit.allowed}
               >
                 {isSubmitting ? 'Оформляем заказ...' : 'Оформить заказ'}
               </Button>

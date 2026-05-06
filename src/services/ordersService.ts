@@ -173,3 +173,61 @@ export const updateOrderStatus = async (
   const docRef = doc(db, COLLECTION_NAME, orderId);
   await updateDoc(docRef, { status });
 };
+
+// Проверка лимита заказов за день (защита от спама)
+const MAX_ORDERS_PER_DAY = 3;
+
+export const checkOrderLimit = async (userId?: string): Promise<{ allowed: boolean; remaining: number }> => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (!isFirebaseConfigured || !ordersCollection || !db) {
+    // Fallback to localStorage
+    const orders = getLocalOrders();
+    const todayOrders = orders.filter(o => {
+      const orderDate = new Date(o.date);
+      return orderDate >= today && orderDate < tomorrow;
+    });
+    
+    // Для незалогиненых проверяем по email/телефону из localStorage
+    const remaining = Math.max(0, MAX_ORDERS_PER_DAY - todayOrders.length);
+    return { allowed: remaining > 0, remaining };
+  }
+
+  try {
+    // Запрос заказов за сегодня
+    const startOfDay = Timestamp.fromDate(today);
+    const endOfDay = Timestamp.fromDate(tomorrow);
+    
+    let q;
+    if (userId) {
+      q = query(
+        ordersCollection,
+        where('orderData.userId', '==', userId),
+        where('createdAt', '>=', startOfDay),
+        where('createdAt', '<', endOfDay)
+      );
+    } else {
+      // Для незалогиненых пользователей используем localStorage
+      const orders = getLocalOrders();
+      const todayOrders = orders.filter(o => {
+        const orderDate = new Date(o.date);
+        return orderDate >= today && orderDate < tomorrow;
+      });
+      const remaining = Math.max(0, MAX_ORDERS_PER_DAY - todayOrders.length);
+      return { allowed: remaining > 0, remaining };
+    }
+
+    const snapshot = await getDocs(q);
+    const todayOrderCount = snapshot.size;
+    const remaining = Math.max(0, MAX_ORDERS_PER_DAY - todayOrderCount);
+    
+    return { allowed: remaining > 0, remaining };
+  } catch (error) {
+    console.error('checkOrderLimit error:', error);
+    // В случае ошибки разрешаем заказ (fail-open для UX)
+    return { allowed: true, remaining: MAX_ORDERS_PER_DAY };
+  }
+};
