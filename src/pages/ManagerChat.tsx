@@ -125,7 +125,7 @@ const ManagerChat: React.FC = () => {
   // Получить актуальное имя пользователя из БД
   const getUserDisplayName = async (userId: string, fallbackName?: string): Promise<string> => {
     try {
-      const userDoc = await getDocById('users', userId);
+      const userDoc = await getDocById('users', userId) as any;
       if (userDoc) {
         const firstName = userDoc.firstName || '';
         const lastName = userDoc.lastName || '';
@@ -478,7 +478,7 @@ const ManagerChat: React.FC = () => {
                             }`}
                           >
                             <div
-                              className={`max-w-[70%] rounded-lg px-4 py-2 break-words overflow-hidden ${
+                              className={`max-w-[100%] rounded-lg px-4 py-2 ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted'
@@ -499,7 +499,7 @@ const ManagerChat: React.FC = () => {
                                   )}
                                 </p>
                               )}
-                              <p className="text-sm whitespace-pre-wrap overflow-wrap-anywhere break-all">{msg.text}</p>
+                              <p className="whitespace-pre-wrap">{msg.text.replace(/\s+/g, ' ')}</p>
 
                               {msg.attachments && msg.attachments.length > 0 && (
                                 <div className="mt-2 space-y-1">
