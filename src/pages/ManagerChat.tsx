@@ -20,6 +20,7 @@ import {
   ChatThread,
 } from '@/services/chatService';
 import { useToast } from '@/hooks/use-toast';
+import { getDocById } from '@/services/firestoreService';
 
 interface ChatUser {
   id: string;
@@ -55,8 +56,8 @@ const ManagerChat: React.FC = () => {
 
     // Client threads
     listUserManagerThreadsForStaff(user.id)
-      .then((allThreads) => {
-        buildUserList(allThreads, 'clients');
+      .then(async (allThreads) => {
+        await buildUserList(allThreads, 'clients');
       })
       .catch((error) => {
         console.error('Error loading manager threads:', error);
@@ -74,8 +75,8 @@ const ManagerChat: React.FC = () => {
 
     // Staff threads with admin
     listStaffThreadsForStaff(user.id)
-      .then((staffThreads) => {
-        buildUserList(staffThreads, 'admin');
+      .then(async (staffThreads) => {
+        await buildUserList(staffThreads, 'admin');
       })
       .catch((error) => {
         console.error('Error loading staff threads:', error);
@@ -95,8 +96,8 @@ const ManagerChat: React.FC = () => {
     if (!isManager || !user?.id) return;
     if (admins.length === 0) return;
 
-    listStaffThreadsForStaff(user.id).then((staffThreads) => {
-      buildUserList(staffThreads, 'admin');
+    listStaffThreadsForStaff(user.id).then(async (staffThreads) => {
+      await buildUserList(staffThreads, 'admin');
     });
   }, [isManager, user?.id, admins]);
 
@@ -121,41 +122,59 @@ const ManagerChat: React.FC = () => {
     }
   }, [messages]);
 
-  const buildUserList = (allThreads: ChatThread[], category: 'clients' | 'admin') => {
-    const users = allThreads
-      .filter((t) => (category === 'clients' ? t.type === 'user-manager' : t.type === 'staff'))
-      .map((t) => {
-      const lastMsgTs = t.lastMessage?.timestamp && typeof t.lastMessage.timestamp === 'object' && 'toDate' in t.lastMessage.timestamp
-        ? (t.lastMessage.timestamp as any).toDate()
-        : t.lastMessage?.timestamp
-          ? new Date(t.lastMessage.timestamp as any)
-          : undefined;
+  // Получить актуальное имя пользователя из БД
+  const getUserDisplayName = async (userId: string, fallbackName?: string): Promise<string> => {
+    try {
+      const userDoc = await getDocById('users', userId);
+      if (userDoc) {
+        const firstName = userDoc.firstName || '';
+        const lastName = userDoc.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        return fullName || userDoc.username || userDoc.email || fallbackName || 'Клиент';
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+    return fallbackName || 'Клиент';
+  };
 
-      const isStaffThread = t.type === 'staff';
-      const counterpartId = isStaffThread
-        ? t.participantIds.find((id) => id !== user?.id)
-        : undefined;
+  const buildUserList = async (allThreads: ChatThread[], category: 'clients' | 'admin') => {
+    const users = await Promise.all(
+      allThreads
+        .filter((t) => (category === 'clients' ? t.type === 'user-manager' : t.type === 'staff'))
+        .map(async (t) => {
+          const lastMsgTs = t.lastMessage?.timestamp && typeof t.lastMessage.timestamp === 'object' && 'toDate' in t.lastMessage.timestamp
+            ? (t.lastMessage.timestamp as any).toDate()
+            : t.lastMessage?.timestamp
+              ? new Date(t.lastMessage.timestamp as any)
+              : undefined;
 
-      const displayName = isStaffThread
-        ? (admins.find((a) => a.id === counterpartId)?.name || 'Админ')
-        : (
-            t.userName ||
-            t.userEmail ||
-            (t.lastMessage?.senderRole === 'user' ? t.lastMessage.senderName : undefined) ||
-            'Клиент'
-          );
+          const isStaffThread = t.type === 'staff';
+          const counterpartId = isStaffThread
+            ? t.participantIds.find((id) => id !== user?.id)
+            : undefined;
 
-      return {
-        id: t.id,
-        name: displayName,
-        role: isStaffThread ? 'admin' : 'user',
-        category,
-        counterpartId,
-        lastMessage: t.lastMessage?.text,
-        lastMessageTime: lastMsgTs,
-        unreadCount: 0,
-      } as ChatUser;
-    });
+          let displayName: string;
+          if (isStaffThread) {
+            displayName = admins.find((a) => a.id === counterpartId)?.name || 'Админ';
+          } else {
+            // Для клиентов загружаем актуальное имя из БД
+            const fallbackName = t.userName || t.userEmail || (t.lastMessage?.senderRole === 'user' ? t.lastMessage.senderName : undefined);
+            displayName = t.userId ? await getUserDisplayName(t.userId, fallbackName) : (fallbackName || 'Клиент');
+          }
+
+          return {
+            id: t.id,
+            name: displayName,
+            role: isStaffThread ? 'admin' : 'user',
+            category,
+            counterpartId,
+            lastMessage: t.lastMessage?.text,
+            lastMessageTime: lastMsgTs,
+            unreadCount: 0,
+          } as ChatUser;
+        })
+    );
 
     setChatUsers((prev) => {
       const other = prev.filter((u) => u.category !== category);
@@ -480,34 +499,36 @@ const ManagerChat: React.FC = () => {
                                   )}
                                 </p>
                               )}
-                              <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+                              <p className="text-sm whitespace-pre-wrap overflow-wrap-anywhere break-all">{msg.text}</p>
 
-                            {msg.attachments && msg.attachments.length > 0 && (
-                              <div className="mt-2 space-y-1">
-                                {msg.attachments.map((att) => (
-                                  <a
-                                    key={att.id}
-                                    href={att.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`flex items-center gap-2 text-xs p-1.5 rounded ${
-                                      isOwn
-                                        ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
-                                        : 'bg-background hover:bg-muted-foreground/10'
-                                    }`}
-                                  >
-                                    <File className="h-3 w-3" />
-                                    <span className="truncate max-w-[150px]">
-                                      {att.name}
-                                    </span>
-                                  </a>
-                                ))}
-                              </div>
-                            )}
+                              {msg.attachments && msg.attachments.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {msg.attachments.map((att) => (
+                                    <a
+                                      key={att.id}
+                                      href={att.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className={`flex items-center gap-2 text-xs p-1.5 rounded ${
+                                        isOwn
+                                          ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
+                                          : 'bg-background hover:bg-muted-foreground/10'
+                                      }`}
+                                    >
+                                      <File className="h-3 w-3" />
+                                      <span className="truncate max-w-[150px]">
+                                        {att.name}
+                                      </span>
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            <span className="text-xs text-muted-foreground mt-1 px-1">
+                              {formatTime(msg.timestamp)}
+                            </span>
                           </div>
-                          <span className="text-xs text-muted-foreground mt-1 px-1">
-                            {formatTime(msg.timestamp)}
-                          </span>
                         </div>
                       </div>
                     );
