@@ -473,17 +473,16 @@ const ManagerChat: React.FC = () => {
                           </Avatar>
 
                           <div
-                            className={`flex flex-col ${
+                            className={`flex flex-col max-w-[70%] ${
                               isOwn ? 'items-end' : 'items-start'
                             }`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                              className={`rounded-lg px-4 py-2 shadow-sm ${
                                 isOwn
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted'
                               }`}
-                              style={{ wordBreak: 'normal' }}
                             >
                               {!isOwn && (
                                 <p className="text-xs font-medium mb-1 opacity-80">
@@ -500,7 +499,7 @@ const ManagerChat: React.FC = () => {
                                   )}
                                 </p>
                               )}
-                              <p className="whitespace-pre-wrap break-words">{msg.text.replace(/\s+/g, ' ')}</p>
+                              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.text.replace(/\s+/g, ' ')}</p>
 
                               {msg.attachments && msg.attachments.length > 0 && (
                                 <div className="mt-2 space-y-1">
