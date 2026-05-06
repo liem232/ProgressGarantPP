@@ -46,6 +46,7 @@ const ManagerChat: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'clients' | 'admin'>('clients');
   const [admins, setAdmins] = useState<{id: string, name: string, email: string}[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load threads and build user list
@@ -113,12 +114,12 @@ const ManagerChat: React.FC = () => {
     return () => unsubscribe();
   }, [isManager, selectedUserId]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to last message with smooth animation
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (lastMessageRef.current && messages.length > 0) {
+      lastMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [messages, selectedUserId]);
+  }, [messages]);
 
   const buildUserList = (allThreads: ChatThread[], category: 'clients' | 'admin') => {
     const users = allThreads
@@ -141,7 +142,7 @@ const ManagerChat: React.FC = () => {
             t.userName ||
             t.userEmail ||
             (t.lastMessage?.senderRole === 'user' ? t.lastMessage.senderName : undefined) ||
-            t.userId
+            'Клиент'
           );
 
       return {
@@ -425,13 +426,14 @@ const ManagerChat: React.FC = () => {
                 <div className="space-y-4 py-4">
                   {filteredMessages.map((msg, index) => {
                     const isOwn = msg.senderId === user?.id;
+                    const isLastMessage = index === filteredMessages.length - 1;
                     const showDate =
                       index === 0 ||
                       formatDate(msg.timestamp) !==
                         formatDate(filteredMessages[index - 1]?.timestamp);
 
                     return (
-                      <div key={msg.id}>
+                      <div key={msg.id} ref={isLastMessage ? lastMessageRef : null}>
                         {showDate && (
                           <div className="flex justify-center my-4">
                             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
@@ -440,33 +442,45 @@ const ManagerChat: React.FC = () => {
                           </div>
                         )}
                         <div
-                          className={`flex flex-col ${
-                            isOwn ? 'items-end' : 'items-start'
+                          className={`flex gap-2 ${
+                            isOwn ? 'flex-row-reverse' : 'flex-row'
                           }`}
                         >
+                          {/* Avatar */}
+                          <Avatar className="h-8 w-8 flex-shrink-0">
+                            <AvatarFallback className={isOwn ? 'bg-primary text-primary-foreground' : ''}>
+                              {(msg.senderName || 'U').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+
                           <div
-                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                              isOwn
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
+                            className={`flex flex-col ${
+                              isOwn ? 'items-end' : 'items-start'
                             }`}
                           >
-                            {!isOwn && (
-                              <p className="text-xs font-medium mb-1 opacity-80">
-                                {msg.senderName}
-                                {msg.senderRole === 'manager' && (
-                                  <Badge variant="secondary" className="ml-2 text-[10px]">
-                                    Менеджер
-                                  </Badge>
-                                )}
-                                {msg.senderRole === 'admin' && (
-                                  <Badge variant="secondary" className="ml-2 text-[10px]">
-                                    Админ
-                                  </Badge>
-                                )}
-                              </p>
-                            )}
-                            <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                            <div
+                              className={`max-w-[70%] rounded-lg px-4 py-2 break-words overflow-hidden ${
+                                isOwn
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted'
+                              }`}
+                            >
+                              {!isOwn && (
+                                <p className="text-xs font-medium mb-1 opacity-80">
+                                  {msg.senderName}
+                                  {msg.senderRole === 'manager' && (
+                                    <Badge variant="secondary" className="ml-2 text-[10px]">
+                                      Менеджер
+                                    </Badge>
+                                  )}
+                                  {msg.senderRole === 'admin' && (
+                                    <Badge variant="secondary" className="ml-2 text-[10px]">
+                                      Админ
+                                    </Badge>
+                                  )}
+                                </p>
+                              )}
+                              <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
 
                             {msg.attachments && msg.attachments.length > 0 && (
                               <div className="mt-2 space-y-1">
