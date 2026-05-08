@@ -41,10 +41,8 @@ const ChatWidget: React.FC = () => {
   const [managerId, setManagerId] = useState<string | null>(null);
   const [threadError, setThreadError] = useState<string | null>(null);
   const [isThreadLoading, setIsThreadLoading] = useState(false);
-  const [attachments, setAttachments] = useState<File[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesLengthRef = useRef(0);
   const isOpenRef = useRef(false);
 
@@ -195,19 +193,8 @@ const ChatWidget: React.FC = () => {
     if (isOpen) setHasUnread(false);
   }, [isOpen]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      setAttachments((prev) => [...prev, ...Array.from(files)]);
-    }
-  };
-
-  const removeAttachment = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleSend = async () => {
-    if (!user || (!inputText.trim() && attachments.length === 0)) return;
+    if (!user || !inputText.trim()) return;
     if (!privateThread) {
       toast({
         title: 'Чат не готов',
@@ -219,23 +206,15 @@ const ChatWidget: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const uploadedAttachments: ChatAttachment[] = [];
-      for (const file of attachments) {
-        const attachment = await uploadFile(file);
-        if (attachment) uploadedAttachments.push(attachment);
-      }
-
       await sendThreadMessage(
         privateThread.id,
         inputText.trim(),
         user.id,
         `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
-        user.role,
-        uploadedAttachments
+        user.role
       );
 
       setInputText('');
-      setAttachments([]);
     } catch (error) {
       toast({
         title: 'Ошибка',
@@ -491,23 +470,6 @@ const ChatWidget: React.FC = () => {
             {/* Input Area */}
             <div className="p-4 border-t bg-card shrink-0 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               <div className="flex items-end gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  multiple
-                  accept=".xlsx,.xls,.xlsm,.csv,.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
-                  onChange={handleFileSelect}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-11 w-11 shrink-0 rounded-xl"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading}
-                >
-                  <Paperclip className="h-5 w-5" />
-                </Button>
                 <div className="flex-1 relative">
                   <Input
                     ref={inputRef}
@@ -529,26 +491,6 @@ const ChatWidget: React.FC = () => {
                   <Send className="h-5 w-5" />
                 </Button>
               </div>
-
-              {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {attachments.map((file, idx) => (
-                    <div
-                      key={`${file.name}_${idx}`}
-                      className="flex items-center gap-2 bg-muted px-2 py-1 rounded text-xs"
-                    >
-                      <span className="max-w-[180px] truncate">{file.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(idx)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
 
               <p className="text-xs text-muted-foreground text-center mt-2 hidden sm:block">
                 Нажмите Enter для отправки
