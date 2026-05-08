@@ -400,25 +400,58 @@ const ChatWidget: React.FC = () => {
                               <p className="whitespace-pre-wrap">{msg.text}</p>
 
                               {msg.attachments && msg.attachments.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  {msg.attachments.map((att) => (
-                                    <a
-                                      key={att.id}
-                                      href={att.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={`flex items-center gap-2 text-xs p-2 rounded-lg ${
-                                        isOwn
-                                          ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
-                                          : isManager
-                                            ? 'bg-white/20 hover:bg-white/30'
-                                            : 'bg-background hover:bg-muted-foreground/10'
-                                      }`}
-                                    >
-                                      <Paperclip className="h-3 w-3" />
-                                      <span className="truncate">{att.name}</span>
-                                    </a>
-                                  ))}
+                                <div className="mt-2 space-y-1.5">
+                                  {msg.attachments.map((att) => {
+                                    const isExcel = att.name.match(/\.(xlsx|xls|xlsm|csv)$/i);
+                                    const isPdf = att.name.match(/\.(pdf)$/i);
+                                    const isImage = att.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                                    const isDoc = att.name.match(/\.(doc|docx|txt|rtf)$/i);
+                                    
+                                    return (
+                                      <a
+                                        key={att.id}
+                                        href={att.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        download={att.name}
+                                        className={`flex items-center gap-2 text-xs p-2.5 rounded-lg transition-colors ${
+                                          isOwn
+                                            ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
+                                            : isManager
+                                              ? 'bg-white/20 hover:bg-white/30'
+                                              : 'bg-background hover:bg-muted-foreground/10'
+                                        }`}
+                                      >
+                                        {isExcel ? (
+                                          <div className="flex-shrink-0 w-7 h-7 bg-green-600 rounded flex items-center justify-center">
+                                            <span className="text-white text-[8px] font-bold">XLS</span>
+                                          </div>
+                                        ) : isPdf ? (
+                                          <div className="flex-shrink-0 w-7 h-7 bg-red-600 rounded flex items-center justify-center">
+                                            <span className="text-white text-[8px] font-bold">PDF</span>
+                                          </div>
+                                        ) : isImage ? (
+                                          <div className="flex-shrink-0 w-7 h-7 bg-blue-500 rounded flex items-center justify-center">
+                                            <Paperclip className="h-3.5 w-3.5 text-white" />
+                                          </div>
+                                        ) : isDoc ? (
+                                          <div className="flex-shrink-0 w-7 h-7 bg-blue-700 rounded flex items-center justify-center">
+                                            <span className="text-white text-[8px] font-bold">DOC</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex-shrink-0 w-7 h-7 bg-gray-500 rounded flex items-center justify-center">
+                                            <Paperclip className="h-3.5 w-3.5 text-white" />
+                                          </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <span className="truncate block" title={att.name}>{att.name}</span>
+                                          <span className="text-[10px] opacity-70">
+                                            {(att.size / 1024).toFixed(0)} KB
+                                          </span>
+                                        </div>
+                                      </a>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -458,6 +491,23 @@ const ChatWidget: React.FC = () => {
             {/* Input Area */}
             <div className="p-4 border-t bg-card shrink-0 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               <div className="flex items-end gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  multiple
+                  accept=".xlsx,.xls,.xlsm,.csv,.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
+                  onChange={handleFileSelect}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 shrink-0 rounded-xl"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  <Paperclip className="h-5 w-5" />
+                </Button>
                 <div className="flex-1 relative">
                   <Input
                     ref={inputRef}

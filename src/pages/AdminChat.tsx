@@ -561,25 +561,56 @@ const AdminChat: React.FC = () => {
                               </p>
 
                               {msg.attachments && msg.attachments.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  {msg.attachments.map((att) => (
-                                    <a
-                                      key={att.id}
-                                      href={att.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={`flex items-center gap-2 text-xs p-1.5 rounded ${
-                                        isOwn
-                                          ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
-                                          : 'bg-background hover:bg-muted-foreground/10'
-                                      }`}
-                                    >
-                                      <File className="h-3 w-3" />
-                                      <span className="truncate max-w-[150px]">
-                                        {att.name}
-                                      </span>
-                                    </a>
-                                  ))}
+                                <div className="mt-2 space-y-1.5">
+                                  {msg.attachments.map((att) => {
+                                    const isExcel = att.name.match(/\.(xlsx|xls|xlsm|csv)$/i);
+                                    const isPdf = att.name.match(/\.(pdf)$/i);
+                                    const isImage = att.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                                    const isDoc = att.name.match(/\.(doc|docx|txt|rtf)$/i);
+                                    
+                                    return (
+                                      <a
+                                        key={att.id}
+                                        href={att.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        download={att.name}
+                                        className={`flex items-center gap-2 text-xs p-2 rounded-lg transition-colors ${
+                                          isOwn
+                                            ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
+                                            : 'bg-background hover:bg-muted-foreground/10'
+                                        }`}
+                                      >
+                                        {isExcel ? (
+                                          <div className="flex-shrink-0 w-6 h-6 bg-green-600 rounded flex items-center justify-center">
+                                            <span className="text-white text-[7px] font-bold">XLS</span>
+                                          </div>
+                                        ) : isPdf ? (
+                                          <div className="flex-shrink-0 w-6 h-6 bg-red-600 rounded flex items-center justify-center">
+                                            <span className="text-white text-[7px] font-bold">PDF</span>
+                                          </div>
+                                        ) : isImage ? (
+                                          <div className="flex-shrink-0 w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
+                                            <File className="h-3 w-3 text-white" />
+                                          </div>
+                                        ) : isDoc ? (
+                                          <div className="flex-shrink-0 w-6 h-6 bg-blue-700 rounded flex items-center justify-center">
+                                            <span className="text-white text-[7px] font-bold">DOC</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex-shrink-0 w-6 h-6 bg-gray-500 rounded flex items-center justify-center">
+                                            <File className="h-3 w-3 text-white" />
+                                          </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <span className="truncate block max-w-[150px]" title={att.name}>{att.name}</span>
+                                          <span className="text-[9px] opacity-70">
+                                            {(att.size / 1024).toFixed(0)} KB
+                                          </span>
+                                        </div>
+                                      </a>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -606,32 +637,57 @@ const AdminChat: React.FC = () => {
             <div className="p-4 border-t space-y-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               {attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {attachments.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs"
-                    >
-                      <File className="h-3 w-3" />
-                      <span className="truncate max-w-[100px]">{file.name}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 ml-1"
-                        onClick={() => removeAttachment(index)}
+                  {attachments.map((file, index) => {
+                    const isExcel = file.name.match(/\.(xlsx|xls|xlsm|csv)$/i);
+                    const isPdf = file.name.match(/\.(pdf)$/i);
+                    const isImage = file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                    const isDoc = file.name.match(/\.(doc|docx|txt|rtf)$/i);
+                    
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-1.5 bg-muted px-2 py-1.5 rounded text-xs"
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
+                        {isExcel ? (
+                          <div className="w-5 h-5 bg-green-600 rounded flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-[6px] font-bold">XLS</span>
+                          </div>
+                        ) : isPdf ? (
+                          <div className="w-5 h-5 bg-red-600 rounded flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-[6px] font-bold">PDF</span>
+                          </div>
+                        ) : isImage ? (
+                          <div className="w-5 h-5 bg-blue-500 rounded flex items-center justify-center flex-shrink-0">
+                            <File className="h-3 w-3 text-white" />
+                          </div>
+                        ) : isDoc ? (
+                          <div className="w-5 h-5 bg-blue-700 rounded flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-[6px] font-bold">DOC</span>
+                          </div>
+                        ) : (
+                          <File className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                        <span className="truncate max-w-[100px]">{file.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 ml-1"
+                          onClick={() => removeAttachment(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-
               <div className="flex gap-2">
                 <input
                   type="file"
                   ref={fileInputRef}
                   className="hidden"
                   multiple
+                  accept=".xlsx,.xls,.xlsm,.csv,.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif"
                   onChange={handleFileSelect}
                 />
                 <Button
