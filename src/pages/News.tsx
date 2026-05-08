@@ -252,12 +252,12 @@ const News: React.FC = () => {
     <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4">
         {/* Заголовок */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
               Новости и акции
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base sm:text-lg text-muted-foreground">
               Актуальная информация о скидках, новинках и важных событиях
             </p>
           </div>
@@ -265,9 +265,10 @@ const News: React.FC = () => {
           {isAdmin && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="min-h-[44px] w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
-                  Добавить новость
+                  <span className="sm:hidden">Добавить</span>
+                  <span className="hidden sm:inline">Добавить новость</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
@@ -409,23 +410,24 @@ const News: React.FC = () => {
         </div>
 
         {/* Фильтры */}
-        <div className="bg-card rounded-lg border p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
+        <div className="bg-card rounded-lg border p-4 sm:p-6 mb-8">
+          <div className="flex flex-col gap-4">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Поиск новостей..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 min-h-[44px]"
               />
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory('all')}
+                className="min-h-[36px] text-xs sm:text-sm"
               >
                 Все
               </Button>
@@ -433,6 +435,7 @@ const News: React.FC = () => {
                 variant={selectedCategory === 'action' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory('action')}
+                className="min-h-[36px] text-xs sm:text-sm"
               >
                 Акции
               </Button>
@@ -440,6 +443,7 @@ const News: React.FC = () => {
                 variant={selectedCategory === 'news' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory('news')}
+                className="min-h-[36px] text-xs sm:text-sm"
               >
                 Новости
               </Button>
@@ -447,6 +451,7 @@ const News: React.FC = () => {
                 variant={selectedCategory === 'announcement' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory('announcement')}
+                className="min-h-[36px] text-xs sm:text-sm"
               >
                 Объявления
               </Button>
