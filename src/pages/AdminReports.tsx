@@ -505,16 +505,16 @@ const AdminReports: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Отчетность</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Отчетность</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Анализ продаж и статистика заказов
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32 min-h-[44px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -524,80 +524,81 @@ const AdminReports: React.FC = () => {
               <SelectItem value="365">Год</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleExportReport}>
+          <Button onClick={handleExportReport} className="min-h-[44px] w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
-            Экспорт CSV
+            <span className="sm:hidden">Excel</span>
+            <span className="hidden sm:inline">Экспорт CSV</span>
           </Button>
         </div>
       </div>
 
       {/* Ключевые метрики */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Всего заказов</p>
-                <p className="text-2xl font-bold">{reportData.totalOrders}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Всего заказов</p>
+                <p className="text-xl sm:text-2xl font-bold">{reportData.totalOrders}</p>
               </div>
-              <ShoppingCart className="h-8 w-8 text-blue-600" />
+              <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Общая выручка</p>
-                <p className="text-2xl font-bold">{reportData.totalRevenue.toLocaleString('ru-RU')} ₽</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Выручка</p>
+                <p className="text-xl sm:text-2xl font-bold truncate">{reportData.totalRevenue.toLocaleString('ru-RU')} ₽</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Средний чек</p>
-                <p className="text-2xl font-bold">{Math.round(reportData.averageOrderValue).toLocaleString('ru-RU')} ₽</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Средний чек</p>
+                <p className="text-xl sm:text-2xl font-bold truncate">{Math.round(reportData.averageOrderValue).toLocaleString('ru-RU')} ₽</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-purple-600" />
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Клиентов</p>
-                <p className="text-2xl font-bold">{reportData.totalCustomers}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Клиентов</p>
+                <p className="text-xl sm:text-2xl font-bold">{reportData.totalCustomers}</p>
               </div>
-              <Users className="h-8 w-8 text-orange-600" />
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Рост</p>
-                <p className={`text-2xl font-bold ${reportData.monthlyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Рост</p>
+                <p className={`text-xl sm:text-2xl font-bold ${reportData.monthlyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {reportData.monthlyGrowth >= 0 ? '+' : ''}{reportData.monthlyGrowth.toFixed(1)}%
                 </p>
               </div>
-              <TrendingUp className={`h-8 w-8 ${reportData.monthlyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              <TrendingUp className={`h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 ml-2 ${reportData.monthlyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`} />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Средний день</p>
-                <p className="text-2xl font-bold">{Math.round(reportData.dailyAverage).toLocaleString('ru-RU')} ₽</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Средний день</p>
+                <p className="text-xl sm:text-2xl font-bold truncate">{Math.round(reportData.dailyAverage).toLocaleString('ru-RU')} ₽</p>
               </div>
-              <CalendarIcon className="h-8 w-8 text-indigo-600" />
+              <CalendarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
@@ -680,41 +681,43 @@ const AdminReports: React.FC = () => {
             Анализ продаж по категориям товаров
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Категория</TableHead>
-                <TableHead className="text-right">Заказы</TableHead>
-                <TableHead className="text-right">Выручка</TableHead>
-                <TableHead className="text-right">Доля</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reportData.categoryStats.map((category, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{category.category}</TableCell>
-                  <TableCell className="text-right">{category.orders}</TableCell>
-                  <TableCell className="text-right font-medium">
-                    {category.revenue.toLocaleString('ru-RU')} ₽
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="w-16 bg-secondary rounded-full h-2 relative">
-                        <div 
-                          className="absolute left-0 top-0 h-full bg-primary rounded-full"
-                          style={{ width: `${category.percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium w-12 text-right">
-                        {category.percentage.toFixed(1)}%
-                      </span>
-                    </div>
-                  </TableCell>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[120px]">Категория</TableHead>
+                  <TableHead className="text-right min-w-[80px]">Заказы</TableHead>
+                  <TableHead className="text-right min-w-[100px]">Выручка</TableHead>
+                  <TableHead className="text-right min-w-[100px]">Доля</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {reportData.categoryStats.map((category, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{category.category}</TableCell>
+                    <TableCell className="text-right">{category.orders}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {category.revenue.toLocaleString('ru-RU')} ₽
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="w-16 bg-secondary rounded-full h-2 relative flex-shrink-0">
+                          <div 
+                            className="absolute left-0 top-0 h-full bg-primary rounded-full"
+                            style={{ width: `${category.percentage}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium w-12 text-right">
+                          {category.percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -727,25 +730,27 @@ const AdminReports: React.FC = () => {
               Самые популярные товары за выбранный период
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Название товара</TableHead>
-                  <TableHead className="text-right">Кол-во</TableHead>
-                  <TableHead className="text-right">Выручка</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportData.topProducts.map((product, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell className="text-right">{product.quantity}</TableCell>
-                    <TableCell className="text-right">{product.revenue.toLocaleString('ru-RU')} ₽</TableCell>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">Название товара</TableHead>
+                    <TableHead className="text-right min-w-[80px]">Кол-во</TableHead>
+                    <TableHead className="text-right min-w-[100px]">Выручка</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {reportData.topProducts.map((product, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell className="text-right">{product.quantity}</TableCell>
+                      <TableCell className="text-right">{product.revenue.toLocaleString('ru-RU')} ₽</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 

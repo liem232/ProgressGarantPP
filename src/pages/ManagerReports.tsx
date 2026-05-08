@@ -331,27 +331,27 @@ const ManagerReports: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => navigate('/orders')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 min-h-[44px] w-full sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" />
             К заказам
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Отчетность по заказам</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-2xl sm:text-3xl font-bold">Отчетность по заказам</h1>
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
               Статистика заказов и информация о клиентах
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32 min-h-[44px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -360,56 +360,57 @@ const ManagerReports: React.FC = () => {
               <SelectItem value="90">90 дней</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleExportReport}>
+          <Button onClick={handleExportReport} className="min-h-[44px] w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
-            Экспорт Excel
+            <span className="sm:hidden">Excel</span>
+            <span className="hidden sm:inline">Экспорт Excel</span>
           </Button>
         </div>
       </div>
 
       {/* Ключевые метрики */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Всего заказов</p>
-                <p className="text-2xl font-bold">{reportData.totalOrders}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Всего заказов</p>
+                <p className="text-xl sm:text-2xl font-bold">{reportData.totalOrders}</p>
               </div>
-              <ShoppingCart className="h-8 w-8 text-blue-600" />
+              <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Общая выручка</p>
-                <p className="text-2xl font-bold">{reportData.totalRevenue.toLocaleString('ru-RU')} ₽</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Выручка</p>
+                <p className="text-xl sm:text-2xl font-bold truncate">{reportData.totalRevenue.toLocaleString('ru-RU')} ₽</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Средний чек</p>
-                <p className="text-2xl font-bold">{Math.round(reportData.averageOrderValue).toLocaleString('ru-RU')} ₽</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Средний чек</p>
+                <p className="text-xl sm:text-2xl font-bold truncate">{Math.round(reportData.averageOrderValue).toLocaleString('ru-RU')} ₽</p>
               </div>
-              <Package className="h-8 w-8 text-purple-600" />
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Клиентов</p>
-                <p className="text-2xl font-bold">{reportData.totalCustomers}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Клиентов</p>
+                <p className="text-xl sm:text-2xl font-bold">{reportData.totalCustomers}</p>
               </div>
-              <Users className="h-8 w-8 text-orange-600" />
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
@@ -417,22 +418,22 @@ const ManagerReports: React.FC = () => {
 
       {/* Заказы по статусам */}
       <Card className="mb-6">
-        <CardHeader>
+        <CardHeader className="px-4 sm:px-6">
           <CardTitle>Заказы по статусам</CardTitle>
           <CardDescription>
             Распределение заказов по текущему статусу
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <CardContent className="px-4 sm:px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {Object.entries(reportData.ordersByStatus).map(([status, count]) => (
-              <Card key={status}>
-                <CardContent className="p-4 text-center">
-                  <Badge variant={statusColors[status as keyof typeof statusColors]} className="mb-2">
+              <Card key={status} className="touch-manipulation">
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <Badge variant={statusColors[status as keyof typeof statusColors]} className="mb-2 text-xs sm:text-sm">
                     {statusLabels[status as keyof typeof statusLabels]}
                   </Badge>
-                  <div className="text-2xl font-bold">{count}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xl sm:text-2xl font-bold">{count}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     {reportData.totalOrders > 0 ? Math.round((count / reportData.totalOrders) * 100) : 0}%
                   </div>
                 </CardContent>
@@ -444,67 +445,69 @@ const ManagerReports: React.FC = () => {
 
       {/* Последние заказы */}
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 sm:px-6">
           <CardTitle>Последние заказы</CardTitle>
           <CardDescription>
             Детальная информация о последних заказах
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID заказа</TableHead>
-                <TableHead>Клиент</TableHead>
-                <TableHead>Телефон</TableHead>
-                <TableHead>Сумма</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead>Дата</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reportData.recentOrders.length === 0 ? (
+        <CardContent className="p-0 sm:p-6">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Заказы за выбранный период отсутствуют
-                  </TableCell>
+                  <TableHead className="min-w-[80px]">ID</TableHead>
+                  <TableHead className="min-w-[150px]">Клиент</TableHead>
+                  <TableHead className="min-w-[130px]">Телефон</TableHead>
+                  <TableHead className="min-w-[100px]">Сумма</TableHead>
+                  <TableHead className="min-w-[120px]">Статус</TableHead>
+                  <TableHead className="min-w-[130px]">Дата</TableHead>
                 </TableRow>
-              ) : (
-                reportData.recentOrders.map((order: Order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono text-xs">
-                      {order.id.slice(-8)}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {order.orderData.firstName} {order.orderData.lastName}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {order.orderData.email}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{order.orderData.phone}</TableCell>
-                    <TableCell className="font-medium">
-                      {order.totalPrice.toLocaleString('ru-RU')} ₽
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusColors[order.status]}>
-                        {statusLabels[order.status]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {order.createdAt?.toDate ? 
-                        format(order.createdAt.toDate(), 'dd.MM.yyyy HH:mm', { locale: ru }) : 
-                        'N/A'
-                      }
+              </TableHeader>
+              <TableBody>
+                {reportData.recentOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      Заказы за выбранный период отсутствуют
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  reportData.recentOrders.map((order: Order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono text-xs">
+                        {order.id.slice(-8)}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-sm sm:text-base">
+                            {order.orderData.firstName} {order.orderData.lastName}
+                          </div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">
+                            {order.orderData.email}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm sm:text-base whitespace-nowrap">{order.orderData.phone}</TableCell>
+                      <TableCell className="font-medium text-sm sm:text-base">
+                        {order.totalPrice.toLocaleString('ru-RU')} ₽
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusColors[order.status]} className="text-xs sm:text-sm">
+                          {statusLabels[order.status]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm sm:text-base whitespace-nowrap">
+                        {order.createdAt?.toDate ? 
+                          format(order.createdAt.toDate(), 'dd.MM.yyyy HH:mm', { locale: ru }) : 
+                          'N/A'
+                        }
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

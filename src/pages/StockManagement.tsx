@@ -224,16 +224,17 @@ const StockManagement: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Управление наличием</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Управление наличием</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Управление количеством товаров на складе
           </p>
         </div>
-        <Button onClick={handleExportStock} variant="outline">
+        <Button onClick={handleExportStock} variant="outline" className="min-h-[44px] w-full sm:w-auto">
           <Download className="h-4 w-4 mr-2" />
-          Экспорт наличия
+          <span className="sm:hidden">Excel</span>
+          <span className="hidden sm:inline">Экспорт наличия</span>
         </Button>
       </div>
 
@@ -267,64 +268,65 @@ const StockManagement: React.FC = () => {
             <Button
               variant={showOutOfStock ? "default" : "outline"}
               onClick={() => setShowOutOfStock(!showOutOfStock)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 min-h-[44px]"
             >
               <Package className="h-4 w-4" />
-              {showOutOfStock ? 'Все товары' : `Отсутствуют (${outOfStockCount})`}
+              <span className="sm:hidden">{showOutOfStock ? 'Все' : `Нет (${outOfStockCount})`}</span>
+              <span className="hidden sm:inline">{showOutOfStock ? 'Все товары' : `Отсутствуют (${outOfStockCount})`}</span>
             </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Статистика */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Всего товаров</p>
-                <p className="text-2xl font-bold">{products.length}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Всего товаров</p>
+                <p className="text-xl sm:text-2xl font-bold">{products.length}</p>
               </div>
-              <Package className="h-8 w-8 text-muted-foreground" />
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">В наличии</p>
-                <p className="text-2xl font-bold text-green-600">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">В наличии</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-600">
                   {products.filter((p: any) => p.quantity > 0).length}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-green-600" />
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Отсутствуют</p>
-                <p className="text-2xl font-bold text-red-600">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Отсутствуют</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-600">
                   {products.filter((p: any) => p.quantity === 0).length}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-red-600" />
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-red-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="touch-manipulation">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Общее количество</p>
-                <p className="text-2xl font-bold">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">На складе</p>
+                <p className="text-xl sm:text-2xl font-bold truncate">
                   {products.reduce((sum: number, p: any) => sum + p.quantity, 0)}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-blue-600" />
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0 ml-2" />
             </div>
           </CardContent>
         </Card>
@@ -343,14 +345,14 @@ const StockManagement: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Изображение</TableHead>
-                  <TableHead>Название</TableHead>
-                  <TableHead>Бренд</TableHead>
-                  <TableHead>Категория</TableHead>
-                  <TableHead>Цена</TableHead>
-                  <TableHead>Количество</TableHead>
-                  <TableHead>Статус</TableHead>
-                  <TableHead>Действия</TableHead>
+                  <TableHead className="min-w-[60px]">Фото</TableHead>
+                  <TableHead className="min-w-[150px]">Название</TableHead>
+                  <TableHead className="min-w-[100px] hidden sm:table-cell">Бренд</TableHead>
+                  <TableHead className="min-w-[120px] hidden md:table-cell">Категория</TableHead>
+                  <TableHead className="min-w-[90px]">Цена</TableHead>
+                  <TableHead className="min-w-[140px]">Кол-во</TableHead>
+                  <TableHead className="min-w-[100px] hidden sm:table-cell">Статус</TableHead>
+                  <TableHead className="min-w-[120px]">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -360,7 +362,7 @@ const StockManagement: React.FC = () => {
                     className={product.quantity === 0 ? 'bg-red-50 dark:bg-red-950/20' : ''}
                   >
                     <TableCell>
-                      <div className="w-12 h-12 bg-secondary rounded-md overflow-hidden">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-secondary rounded-md overflow-hidden flex-shrink-0">
                         {product.image ? (
                           <img
                             src={product.image}
@@ -369,33 +371,35 @@ const StockManagement: React.FC = () => {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Package className="h-6 w-6 text-muted-foreground" />
+                            <Package className="h-4 w-4 sm:h-6 sm:w-6 text-muted-foreground" />
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">
                       <div>
-                        <p className="max-w-[200px] truncate">{product.name}</p>
+                        <p className="max-w-[120px] sm:max-w-[200px] truncate text-sm sm:text-base">{product.name}</p>
+                        <p className="text-xs text-muted-foreground sm:hidden">{product.brand || '-'} • {product.category}</p>
                         {product.quantity === 0 && (
-                          <Badge variant="destructive" className="mt-1 text-xs">
+                          <Badge variant="destructive" className="mt-1 text-xs sm:hidden">
                             Нет в наличии
                           </Badge>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{product.brand || '-'}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>{product.price.toLocaleString('ru-RU')} ₽</TableCell>
+                    <TableCell className="hidden sm:table-cell">{product.brand || '-'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{product.category}</TableCell>
+                    <TableCell className="text-sm sm:text-base whitespace-nowrap">{product.price.toLocaleString('ru-RU')} ₽</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => bulkStockUpdate(product.id, -1)}
                           disabled={updateStockMutation.isPending}
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                         <Input
                           type="number"
@@ -404,7 +408,7 @@ const StockManagement: React.FC = () => {
                             const newQuantity = parseInt(e.target.value) || 0;
                             handleStockUpdate(product.id, newQuantity);
                           }}
-                          className={`w-20 text-center ${
+                          className={`w-14 sm:w-20 text-center text-sm sm:text-base h-8 sm:h-9 ${
                             product.quantity === 0 ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : ''
                           }`}
                           min="0"
@@ -415,33 +419,38 @@ const StockManagement: React.FC = () => {
                           variant="outline"
                           onClick={() => bulkStockUpdate(product.id, 1)}
                           disabled={updateStockMutation.isPending}
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={product.quantity > 0 ? "default" : "destructive"}>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={product.quantity > 0 ? "default" : "destructive"} className="text-xs sm:text-sm">
                         {product.quantity > 0 ? `В наличии (${product.quantity})` : 'Отсутствует'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleStockUpdate(product.id, product.quantity + 10)}
                           disabled={updateStockMutation.isPending}
+                          className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                         >
-                          +10
+                          <span className="sm:hidden">+10</span>
+                          <span className="hidden sm:inline">+10</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleStockUpdate(product.id, Math.max(0, product.quantity - 10))}
                           disabled={updateStockMutation.isPending}
+                          className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                         >
-                          -10
+                          <span className="sm:hidden">-10</span>
+                          <span className="hidden sm:inline">-10</span>
                         </Button>
                       </div>
                     </TableCell>
