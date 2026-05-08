@@ -44,7 +44,7 @@ const Index = () => {
   const popularProducts = products.slice(0, 8);
   const newProducts = products.slice(0, 4);
 
-  // Слайдер баннеров - 3 слайда с разными переходами
+  
   const slides = [
     {
       id: 1,
@@ -86,7 +86,7 @@ const Index = () => {
   const [dragEnd, setDragEnd] = useState<number | null>(null);
   const [isUserInteracting, setIsUserInteracting] = useState(false);
 
-  // Автоматическое перелистывание каждые 5 секунд
+  
   useEffect(() => {
     const timer = setInterval(() => {
       if (!isUserInteracting) {
@@ -183,10 +183,10 @@ const Index = () => {
     { title: 'Мундштуки', count: 60, image: '/img/catalog8.jpg' },
   ];
 
-  // Компактная карточка товара - адаптированная для светлой и тёмной тем
+
   const ProductCard = ({ product }: { product: any }) => (
     <div className="group bg-card rounded-lg border border-border overflow-hidden product-card-hover dark:shadow-none">
-      {/* Фото товара */}
+     
       <Link to={`/catalog`} className="block relative aspect-square bg-secondary/50 dark:bg-secondary/20 overflow-hidden">
         {product.image ? (
           <>
@@ -206,19 +206,18 @@ const Index = () => {
             <Package className="h-12 w-12 text-muted-foreground/30" />
           </div>
         )}
-        {/* Бейджи */}
+    
         {product.inStock ? (
           <span className="absolute top-2 left-2 w-2 h-2 bg-green-500 rounded-full" />
         ) : (
           <span className="absolute top-2 left-2 w-2 h-2 bg-muted-foreground/50 rounded-full" />
         )}
-        {/* Кнопка избранного */}
+       
         <button className="absolute top-2 right-2 w-8 h-8 bg-card/90 dark:bg-background/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm dark:shadow-none border border-border/50">
           <Heart className="h-4 w-4 text-muted-foreground hover:text-red-500" />
         </button>
       </Link>
-      
-      {/* Информация о товаре */}
+
       <div className="p-3">
         {product.brand && (
           <p className="text-[11px] text-primary font-medium uppercase tracking-wide mb-1">{product.brand}</p>
@@ -228,18 +227,23 @@ const Index = () => {
             {product.name}
           </h3>
         </Link>
-        <div className="flex items-center justify-between">
-          <span className="text-base font-bold text-foreground">
-            {product.price.toLocaleString('ru-RU')} ₽
-          </span>
-          <Button 
-            size="sm" 
-            className="h-8 px-3 shadow-primary dark:shadow-none"
-            onClick={() => handleAddToCart(product)}
-            disabled={!product.inStock}
-          >
-            <ShoppingCart className="h-4 w-4" />
-          </Button>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-base font-bold text-foreground">
+              {product.price.toLocaleString('ru-RU')} ₽
+            </span>
+            <Button 
+              size="sm" 
+              className="h-8 px-3 shadow-primary dark:shadow-none"
+              onClick={() => handleAddToCart(product)}
+              disabled={!product.inStock || product.quantity === 0}
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            В наличии: {product.quantity} шт.
+          </div>
         </div>
       </div>
     </div>

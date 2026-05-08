@@ -44,6 +44,7 @@ const AdminProducts: React.FC = () => {
     image: '',
     volume: '',
     strength: '',
+    quantity: 0,
   });
 
   const { data: productsData = [], isLoading } = useQuery({
@@ -75,6 +76,7 @@ const AdminProducts: React.FC = () => {
         image: '',
         volume: '',
         strength: '',
+        quantity: 0,
       });
     }
     setIsDialogOpen(true);
@@ -112,6 +114,7 @@ const AdminProducts: React.FC = () => {
         image: formData.image || '/img/placeholder.png',
         volume: formData.volume,
         strength: formData.strength,
+        quantity: Number(formData.quantity) || 0,
       };
 
       await setDoc(doc(db, 'products', productId), productData);
@@ -197,6 +200,7 @@ const AdminProducts: React.FC = () => {
                 <TableHead>Категория</TableHead>
                 <TableHead>Бренд</TableHead>
                 <TableHead>Цена</TableHead>
+                <TableHead>Наличие</TableHead>
                 <TableHead>Статус</TableHead>
                 <TableHead className="w-[100px]">Действия</TableHead>
               </TableRow>
@@ -215,6 +219,11 @@ const AdminProducts: React.FC = () => {
                   <TableCell>{product.category}</TableCell>
                   <TableCell>{product.brand}</TableCell>
                   <TableCell>{product.price.toLocaleString('ru-RU')} ₽</TableCell>
+                  <TableCell>
+                    <span className={product.quantity === 0 ? 'text-red-500 font-medium' : 'text-green-600 font-medium'}>
+                      {product.quantity || 0} шт.
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={product.inStock ? 'default' : 'secondary'}>
                       {product.inStock ? 'В наличии' : 'Нет в наличии'}
@@ -311,6 +320,28 @@ const AdminProducts: React.FC = () => {
                   value={formData.volume}
                   onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
                   placeholder="Например: 50г"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Количество на складе *</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="0"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="strength">Крепость</Label>
+                <Input
+                  id="strength"
+                  value={formData.strength}
+                  onChange={(e) => setFormData({ ...formData, strength: e.target.value })}
+                  placeholder="Например: Средняя"
                 />
               </div>
             </div>

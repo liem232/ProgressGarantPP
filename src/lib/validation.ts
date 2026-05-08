@@ -12,6 +12,7 @@ export const productSchema = z.object({
   image: z.string().url('Некорректный URL изображения').optional().or(z.literal('')),
   volume: z.string().optional(),
   strength: z.string().optional(),
+  quantity: z.number().min(0, 'Количество не может быть отрицательным').default(0),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;

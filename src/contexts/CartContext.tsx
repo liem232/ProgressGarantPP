@@ -11,6 +11,7 @@ export interface Product {
   brand?: string;
   volume?: string;
   strength?: string;
+  quantity: number;
 }
 
 interface CartItem extends Product {
@@ -48,12 +49,25 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [items]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    // Проверяем наличие товара
+    if (product.quantity <= 0) {
+      throw new Error('Товар отсутствует на складе');
+    }
+    
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
+      const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+      const newQuantity = currentCartQuantity + quantity;
+      
+      // Проверяем, что запрошенное количество не превышает наличие
+      if (newQuantity > product.quantity) {
+        throw new Error(`Недостаточно товара на складе. Доступно: ${product.quantity} шт.`);
+      }
+      
       if (existingItem) {
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity }
             : item
         );
       }
@@ -70,11 +84,20 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeFromCart(productId);
       return;
     }
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === productId ? { ...item, quantity } : item
-      )
-    );
+    
+    setItems(prevItems => {
+      const item = prevItems.find(item => item.id === productId);
+      if (!item) return prevItems;
+      
+      // Проверяем, что новое количество не превышает наличие на складе
+      if (quantity > item.quantity) {
+        throw new Error(`Недостаточно товара на складе. Доступно: ${item.quantity} шт.`);
+      }
+      
+      return prevItems.map(cartItem =>
+        cartItem.id === productId ? { ...cartItem, quantity } : cartItem
+      );
+    });
   };
 
   const clearCart = () => {

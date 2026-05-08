@@ -27,6 +27,8 @@ import Admin from "./pages/Admin";
 import ManagerChat from "./pages/ManagerChat";
 import AdminChat from "./pages/AdminChat";
 import ManagerOrders from "./pages/ManagerOrders";
+import AdminReports from "./pages/AdminReports";
+import ManagerReports from "./pages/ManagerReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +62,7 @@ const App = () => (
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/manager/chat" element={<ManagerChat />} />
                   <Route path="/manager/orders" element={<ManagerOrders />} />
+                  <Route path="/manager/reports" element={<ManagerReports />} />
                   <Route path="/admin/chat" element={<AdminChat />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

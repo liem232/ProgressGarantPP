@@ -160,18 +160,72 @@ export const updateOrderStatus = async (
   orderId: string,
   status: Order['status']
 ): Promise<void> => {
+  // Получаем информацию о заказе
+  const order = await getOrderById(orderId);
+  if (!order) {
+    throw new Error('Заказ не найден');
+  }
+
+  // Обновляем статус заказа
   if (!isFirebaseConfigured || !db) {
     const orders = getLocalOrders();
     const index = orders.findIndex(o => o.id === orderId);
     if (index !== -1) {
+      const previousStatus = orders[index].status;
       orders[index].status = status;
+      
+      // Если статус меняется на "выполнен", обновляем наличие товаров
+      if (previousStatus !== 'completed' && status === 'completed') {
+        await updateStockForOrder(order.items, -1);
+      }
+      // Если статус меняется с "выполнен" на другой, возвращаем товары
+      else if (previousStatus === 'completed' && status !== 'completed') {
+        await updateStockForOrder(order.items, 1);
+      }
+      
       saveLocalOrders(orders);
     }
     return;
   }
 
   const docRef = doc(db, COLLECTION_NAME, orderId);
+  
+  // Получаем текущий статус заказа
+  const currentDoc = await getDoc(docRef);
+  const previousStatus = currentDoc.data()?.status || 'pending';
+  
+  // Обновляем статус
   await updateDoc(docRef, { status });
+  
+  // Если статус меняется на "выполнен", обновляем наличие товаров
+  if (previousStatus !== 'completed' && status === 'completed') {
+    await updateStockForOrder(order.items, -1);
+  }
+  // Если статус меняется с "выполнен" на другой, возвращаем товары
+  else if (previousStatus === 'completed' && status !== 'completed') {
+    await updateStockForOrder(order.items, 1);
+  }
+};
+
+// Функция для обновления наличия товаров
+const updateStockForOrder = async (items: OrderItem[], delta: number): Promise<void> => {
+  // Импортируем здесь, чтобы избежать циклических зависимостей
+  const { getProducts, updateProduct } = await import('./productsService');
+  
+  try {
+    const products = await getProducts();
+    
+    for (const item of items) {
+      const product = products.find(p => p.id === item.id);
+      if (product) {
+        const newQuantity = Math.max(0, product.quantity + (item.quantity * delta));
+        await updateProduct(item.id, { quantity: newQuantity });
+      }
+    }
+  } catch (error) {
+    console.error('Error updating stock for order:', error);
+    // Не прерываем выполнение, если не удалось обновить наличие
+  }
 };
 
 // Проверка лимита заказов за день (защита от спама)

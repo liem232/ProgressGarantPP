@@ -8,13 +8,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Users, Package, FileText, Clock, CheckCircle2, XCircle, Eye, Ban, ShieldCheck } from 'lucide-react';
+import { Shield, Users, Package, FileText, Clock, CheckCircle2, XCircle, Eye, Ban, ShieldCheck, Warehouse } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { seedProducts } from '@/services/seedService';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
 import AdminProducts from '@/components/AdminProducts';
 import { getCollection, updateDoc, getDocById } from '@/services/firestoreService';
+import StockManagement from '@/pages/StockManagement';
+import AdminReports from '@/pages/AdminReports';
 
 interface AdminUser {
   id: string;
@@ -248,6 +250,8 @@ const Admin: React.FC = () => {
             <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3">Обзор</TabsTrigger>
             <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 sm:px-3">Заказы ({orders.length})</TabsTrigger>
             <TabsTrigger value="products" className="text-xs sm:text-sm px-2 sm:px-3">Товары</TabsTrigger>
+            <TabsTrigger value="stock" className="text-xs sm:text-sm px-2 sm:px-3">Наличие</TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs sm:text-sm px-2 sm:px-3">Отчетность</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3">Пользователи ({users.length})</TabsTrigger>
           </TabsList>
 
@@ -594,6 +598,14 @@ const Admin: React.FC = () => {
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="stock" className="mt-6">
+            <StockManagement />
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <AdminReports />
           </TabsContent>
 
         </Tabs>

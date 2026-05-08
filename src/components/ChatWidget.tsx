@@ -154,12 +154,34 @@ const ChatWidget: React.FC = () => {
     isOpenRef.current = isOpen;
   }, [isOpen]);
 
-  // Auto-scroll
+  // Auto-scroll to last message
   useEffect(() => {
     if (scrollRef.current && isOpen && !isMinimized) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      // Используем setTimeout чтобы дать время на рендер нового сообщения
+      setTimeout(() => {
+        const scrollContainer = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
     }
   }, [messages, isOpen, isMinimized]);
+
+  // Auto-scroll when sending message
+  useEffect(() => {
+    if (scrollRef.current && isOpen && !isMinimized && !isLoading) {
+      const scrollContainer = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [isLoading, isOpen, isMinimized]);
 
   // Focus input when opened
   useEffect(() => {
@@ -259,9 +281,9 @@ const ChatWidget: React.FC = () => {
       {/* Chat Window */}
       {isOpen && (
         <div 
-          className="fixed z-50 transition-all duration-300 ease-in-out bottom-0 left-0 right-0 top-0 sm:top-auto sm:bottom-6 sm:right-6 sm:left-auto sm:w-[420px] md:w-[480px] lg:w-[520px]"
+          className="fixed z-50 transition-all duration-300 ease-in-out bottom-0 left-0 right-0 top-0 sm:top-auto sm:bottom-6 sm:right-6 sm:left-auto sm:w-[380px] md:w-[420px] lg:w-[460px]"
         >
-          <Card className="h-full sm:h-[600px] md:h-[650px] lg:h-[700px] shadow-2xl border-0 flex flex-col overflow-hidden">
+          <Card className="h-full sm:h-[520px] md:h-[560px] lg:h-[600px] shadow-2xl border-0 flex flex-col overflow-hidden">
             {/* Header */}
             <CardHeader className="p-4 bg-gradient-to-r from-primary to-primary-glow text-primary-foreground flex flex-row items-center justify-between space-y-0 shrink-0">
               <div className="flex items-center gap-3">
@@ -490,12 +512,12 @@ const ChatWidget: React.FC = () => {
       {!isOpen && (
         <Button
           size="lg"
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 rounded-full shadow-2xl h-14 w-14 sm:h-16 sm:w-16 z-50 transition-transform hover:scale-110"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 rounded-full shadow-2xl h-12 w-12 sm:h-14 sm:w-14 z-50 transition-transform hover:scale-110"
           onClick={() => setIsOpen(true)}
         >
-          <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" />
+          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
           {hasUnread && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-background flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-background flex items-center justify-center">
               <span className="h-2 w-2 bg-white rounded-full animate-pulse" />
             </span>
           )}

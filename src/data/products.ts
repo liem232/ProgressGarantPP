@@ -9,7 +9,8 @@ export const mockProducts = [
     description: 'Премиальный кальян с уникальным дизайном',
     inStock: true,
     brand: 'Alpha Hookah',
-    volume: 'Средний'
+    volume: 'Средний',
+    quantity: 5
     
   },
   {
@@ -21,7 +22,8 @@ export const mockProducts = [
     description: 'Стеклянный кальян с прозрачной колбой',
     inStock: true,
     brand: 'SoftSmoke',
-    volume: 'Большой'
+    volume: 'Большой',
+    quantity: 8
   },
 
   // Табак
@@ -35,7 +37,8 @@ export const mockProducts = [
     inStock: true,
     brand: 'Adalya',
     volume: '50г',
-    strength: 'Средняя'
+    strength: 'Средняя',
+    quantity: 25
   },
   {
     id: '4',
@@ -47,7 +50,8 @@ export const mockProducts = [
     inStock: true,
     brand: 'Darkside',
     volume: '30г',
-    strength: 'Средняя'
+    strength: 'Средняя',
+    quantity: 15
   },
 
   // Бестабачные смеси
@@ -58,10 +62,11 @@ export const mockProducts = [
     image: '/img/СмесьTeaMixEarlGrey.jpeg',
     category: 'Бестабачные смеси',
     description: 'Бестабачная смесь со вкусом ежевики',
-    inStock: true,
+    inStock: false,
     brand: 'MustHave',
     volume: '50г',
-    strength: 'Высокая'
+    strength: 'Высокая',
+    quantity: 0
   },
   {
     id: '6',
@@ -73,7 +78,8 @@ export const mockProducts = [
     inStock: true,
     brand: 'Brusko',
     volume: '50г',
-    strength: 'Средняя'
+    strength: 'Средняя',
+    quantity: 20
   },
 
   // Электронные сигареты
@@ -86,7 +92,8 @@ export const mockProducts = [
     description: 'Одноразовая электронная сигарета со вкусом банана',
     inStock: true,
     brand: 'Brusko&LANAVAPE',
-    volume: '1.5мл'
+    volume: '1.5мл',
+    quantity: 50
   },
   {
     id: '8',
@@ -97,7 +104,8 @@ export const mockProducts = [
     description: 'Одноразовая электронная сигарета со вкусом арбуза',
     inStock: true,
     brand: 'Brusko&LANAVAPE',
-    volume: '4.5мл'
+    volume: '4.5мл',
+    quantity: 40
   },
 
   // Аксессуары
@@ -109,7 +117,8 @@ export const mockProducts = [
     category: 'Аксессуары',
     description: 'Качественные щипцы из нержавеющей стали',
     inStock: true,
-    brand: 'Hornet'
+    brand: 'Hornet',
+    quantity: 35
   },
   {
     id: '10',
@@ -120,7 +129,8 @@ export const mockProducts = [
     description: 'Натуральный кокосовый уголь премиум качества',
     inStock: true,
     brand: 'Cocoloco',
-    volume: '300гр'
+    volume: '300гр',
+    quantity: 60
   },
 
   // Дополнительные товары для каталога
@@ -133,7 +143,8 @@ export const mockProducts = [
     description: 'Компактный дорожный кальян',
     inStock: true,
     brand: 'Hoob',
-    volume: 'Малый'
+    volume: 'Малый',
+    quantity: 12
   },
   {
     id: '12',
@@ -145,7 +156,8 @@ export const mockProducts = [
     inStock: true,
     brand: 'BlackBurn',
     volume: '35г',
-    strength: 'Средняя'
+    strength: 'Средняя',
+    quantity: 18
   }
 ];
 

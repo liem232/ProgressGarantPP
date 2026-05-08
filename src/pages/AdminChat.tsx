@@ -444,7 +444,7 @@ const AdminChat: React.FC = () => {
                             .map((manager) => (
                               <div
                                 key={manager.id}
-                                className="flex items-center gap-3 w-full p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted border border-dashed border-muted-foreground/30"
+                                className="flex items-center gap-3 w-full p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted border-muted-foreground/30"
                                 onClick={() => handleStartManagerChat(manager.id)}
                               >
                                 <Avatar className="h-10 w-10">

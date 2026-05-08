@@ -275,18 +275,23 @@ const Catalog: React.FC = () => {
                         {product.name}
                       </h3>
                     </Link>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-foreground">
-                        {product.price.toLocaleString('ru-RU')} ₽
-                      </span>
-                      <Button 
-                        size="sm" 
-                        className="h-7 px-2 shadow-primary dark:shadow-none"
-                        onClick={() => handleAddToCart(product)}
-                        disabled={!product.inStock}
-                      >
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-foreground">
+                          {product.price.toLocaleString('ru-RU')} ₽
+                        </span>
+                        <Button 
+                          size="sm" 
+                          className="h-7 px-2 shadow-primary dark:shadow-none"
+                          onClick={() => handleAddToCart(product)}
+                          disabled={!product.inStock || product.quantity === 0}
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        В наличии: {product.quantity} шт.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -322,19 +327,24 @@ const Catalog: React.FC = () => {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-base font-bold text-foreground">
-                        {product.price.toLocaleString('ru-RU')} ₽
-                      </span>
-                      <Button 
-                        size="sm" 
-                        className="h-8 shadow-primary dark:shadow-none"
-                        onClick={() => handleAddToCart(product)}
-                        disabled={!product.inStock}
-                      >
-                        <ShoppingCart className="h-4 w-4 mr-1" />
-                        В корзину
-                      </Button>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-foreground">
+                          {product.price.toLocaleString('ru-RU')} ₽
+                        </span>
+                        <Button 
+                          size="sm" 
+                          className="h-8 shadow-primary dark:shadow-none"
+                          onClick={() => handleAddToCart(product)}
+                          disabled={!product.inStock || product.quantity === 0}
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-1" />
+                          В корзину
+                        </Button>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        В наличии: {product.quantity} шт.
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
-import { ArrowLeft, Eye, Package, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Eye, Package, Clock, CheckCircle2, XCircle, BarChart3 } from 'lucide-react';
 
 const statusLabels: Record<Order['status'], string> = {
   pending: 'Ожидает обработки',
@@ -101,8 +101,18 @@ const ManagerOrders: React.FC = () => {
             <Badge variant="secondary">Manager</Badge>
           </div>
           
-          {/* Фильтр по статусу */}
+          {/* Кнопки управления */}
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/manager/reports')}
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Отчетность
+            </Button>
+            
+            {/* Фильтр по статусу */}
             <span className="text-sm font-medium text-muted-foreground">Фильтр:</span>
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as Order['status'] | 'all')}>
               <SelectTrigger className="w-48">
