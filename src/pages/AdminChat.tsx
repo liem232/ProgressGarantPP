@@ -549,12 +549,12 @@ const AdminChat: React.FC = () => {
                               }`}
                             >
                               {!isOwn && (
-                                <p className="text-xs font-medium mb-1 opacity-90">
+                                <div className="text-xs font-medium mb-1 opacity-90">
                                   {msg.senderName}
                                   <Badge variant="secondary" className="ml-2 text-[10px]">
                                     {msg.senderRole === 'manager' ? 'Менеджер' : msg.senderRole}
                                   </Badge>
-                                </p>
+                                </div>
                               )}
                               <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                                 {msg.text.replace(/\s+/g, ' ')}

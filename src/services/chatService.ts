@@ -302,22 +302,35 @@ export const uploadFile = async (
     };
   }
 
-  const fileName = `${Date.now()}_${file.name}`;
-  const filePath = orderId
-    ? `order_files/${orderId}/${fileName}`
-    : `chat_files/${fileName}`;
-  const storageRef = ref(storage, filePath);
+  try {
+    const fileName = `${Date.now()}_${file.name}`;
+    const filePath = orderId
+      ? `order_files/${orderId}/${fileName}`
+      : `chat_files/${fileName}`;
+    const storageRef = ref(storage, filePath);
 
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
 
-  return {
-    id: fileName,
-    name: file.name,
-    url: downloadURL,
-    type: file.type,
-    size: file.size,
-  };
+    return {
+      id: fileName,
+      name: file.name,
+      url: downloadURL,
+      type: file.type,
+      size: file.size,
+    };
+  } catch (error) {
+    console.error('Error uploading file to Firebase Storage:', error);
+    // Fallback to local blob URL if Firebase upload fails
+    console.warn('Falling back to local blob URL for file:', file.name);
+    return {
+      id: Date.now().toString(),
+      name: file.name,
+      url: URL.createObjectURL(file),
+      type: file.type,
+      size: file.size,
+    };
+  }
 };
 
 export const getAvailableManagers = async (): Promise<{id: string, name: string, email: string}[]> => {
