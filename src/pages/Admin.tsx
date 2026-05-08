@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,9 +56,13 @@ const Admin: React.FC = () => {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isSeedingProducts, setIsSeedingProducts] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
+  
+  // Получаем активный таб из URL параметра или используем 'overview' по умолчанию
+  const defaultTab = searchParams.get('tab') || 'overview';
 
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
     queryKey: ['orders'],
@@ -243,79 +248,80 @@ const Admin: React.FC = () => {
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-foreground mb-8">Админ-панель</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-8">Админ-панель</h1>
         
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="flex flex-wrap w-full gap-1 sm:gap-2">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3">Обзор</TabsTrigger>
-            <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 sm:px-3">Заказы ({orders.length})</TabsTrigger>
-            <TabsTrigger value="products" className="text-xs sm:text-sm px-2 sm:px-3">Товары</TabsTrigger>
-            <TabsTrigger value="stock" className="text-xs sm:text-sm px-2 sm:px-3">Наличие</TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs sm:text-sm px-2 sm:px-3">Отчетность</TabsTrigger>
-            <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3">Пользователи ({users.length})</TabsTrigger>
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <TabsList className="flex flex-wrap w-full gap-1 sm:gap-2 h-auto min-h-[40px]">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Обзор</TabsTrigger>
+            <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Заказы ({orders.length})</TabsTrigger>
+            <TabsTrigger value="products" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Товары</TabsTrigger>
+            <TabsTrigger value="stock" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Наличие</TabsTrigger>
+            <TabsTrigger value="reports" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Отчетность</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Пользователи ({users.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
             <div className="flex justify-end mb-6">
-              <Button onClick={handleSeedProducts} disabled={isSeedingProducts}>
+              <Button onClick={handleSeedProducts} disabled={isSeedingProducts} className="min-h-[44px] text-xs sm:text-sm">
                 <Shield className="h-4 w-4 mr-2" />
-                {isSeedingProducts ? 'Загрузка товаров...' : 'Залить товары в Firestore'}
+                <span className="sm:hidden">Загрузить товары</span>
+                <span className="hidden sm:inline">{isSeedingProducts ? 'Загрузка товаров...' : 'Залить товары в Firestore'}</span>
               </Button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Пользователи
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-primary">{users.length}</p>
-                  <p className="text-sm text-muted-foreground">Зарегистрированных</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 sm:gap-6">
+              <Card className="touch-manipulation">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Пользователи</p>
+                      <p className="text-xl sm:text-2xl font-bold text-primary">{users.length}</p>
+                      <p className="text-xs text-muted-foreground hidden sm:block">Зарегистрированных</p>
+                    </div>
+                    <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0 ml-2" />
+                  </div>
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    Заказы
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-primary">{orders.length}</p>
-                  <p className="text-sm text-muted-foreground">Всего заказов</p>
+              <Card className="touch-manipulation">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Заказы</p>
+                      <p className="text-xl sm:text-2xl font-bold text-primary">{orders.length}</p>
+                      <p className="text-xs text-muted-foreground hidden sm:block">Всего заказов</p>
+                    </div>
+                    <Package className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0 ml-2" />
+                  </div>
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5" />
-                    Выполнено
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-green-600">
-                    {orders.filter(order => order.status === 'completed').length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Доставлено</p>
+              <Card className="touch-manipulation">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">Выполнено</p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-600">
+                        {orders.filter(order => order.status === 'completed').length}
+                      </p>
+                      <p className="text-xs text-muted-foreground hidden sm:block">Доставлено</p>
+                    </div>
+                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0 ml-2" />
+                  </div>
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    В работе
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {orders.filter(order => ['pending', 'processing'].includes(order.status)).length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Активных</p>
+              <Card className="touch-manipulation">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">В работе</p>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                        {orders.filter(order => ['pending', 'processing'].includes(order.status)).length}
+                      </p>
+                      <p className="text-xs text-muted-foreground hidden sm:block">Активных</p>
+                    </div>
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0 ml-2" />
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -323,38 +329,38 @@ const Admin: React.FC = () => {
 
           <TabsContent value="orders" className="mt-6">
             {/* Фильтр по статусу */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h2 className="text-xl font-semibold">Управление заказами</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold">Управление заказами</h2>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">Фильтр:</span>
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Фильтр:</span>
                 <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as Order['status'] | 'all')}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-44 min-h-[44px] text-xs sm:text-sm">
                     <SelectValue placeholder="Все статусы" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все заказы ({orders.length})</SelectItem>
                     <SelectItem value="pending">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Ожидает обработки ({orders.filter(o => o.status === 'pending').length})
+                        <Clock className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">Ожидает ({orders.filter(o => o.status === 'pending').length})</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="processing">
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        В обработке ({orders.filter(o => o.status === 'processing').length})
+                        <Package className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">В работе ({orders.filter(o => o.status === 'processing').length})</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="completed">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Выполнен ({orders.filter(o => o.status === 'completed').length})
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">Выполнен ({orders.filter(o => o.status === 'completed').length})</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="cancelled">
                       <div className="flex items-center gap-2">
-                        <XCircle className="h-4 w-4" />
-                        Отменен ({orders.filter(o => o.status === 'cancelled').length})
+                        <XCircle className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">Отменен ({orders.filter(o => o.status === 'cancelled').length})</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -412,14 +418,17 @@ const Admin: React.FC = () => {
                               value={order.status}
                               onValueChange={(value) => handleUpdateStatus(order.id, value as Order['status'])}
                             >
-                              <SelectTrigger className="w-full sm:w-40">
+                              <SelectTrigger className="w-full sm:w-36 min-h-[44px] text-xs sm:text-sm">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="pending">Ожидает обработки</SelectItem>
-                                <SelectItem value="processing">В обработке</SelectItem>
-                                <SelectItem value="completed">Выполнен</SelectItem>
-                                <SelectItem value="cancelled">Отменен</SelectItem>
+                                <SelectItem value="pending" className="text-xs sm:text-sm">
+                                  <span className="sm:hidden">Ожидает</span>
+                                  <span className="hidden sm:inline">Ожидает обработки</span>
+                                </SelectItem>
+                                <SelectItem value="processing" className="text-xs sm:text-sm">В обработке</SelectItem>
+                                <SelectItem value="completed" className="text-xs sm:text-sm">Выполнен</SelectItem>
+                                <SelectItem value="cancelled" className="text-xs sm:text-sm">Отменен</SelectItem>
                               </SelectContent>
                             </Select>
                             <Button
@@ -512,62 +521,66 @@ const Admin: React.FC = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {users.map((user) => (
                     <Card key={user.id} className={user.isBlocked ? 'opacity-60' : ''}>
-                      <CardHeader>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12">
+                      <CardHeader className="p-3 sm:p-6">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
                             <AvatarImage src={user.photoURL} />
-                            <AvatarFallback className="bg-primary text-primary-foreground">
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
                               {(user.firstName?.[0] || user.username[0]).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1">
-                            <CardTitle className="text-lg">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-sm sm:text-lg truncate">
                               {user.firstName || user.username}
                               {user.lastName && ` ${user.lastName}`}
                             </CardTitle>
                             {user.isBlocked && (
-                              <Badge variant="destructive" className="mt-1">
+                              <Badge variant="destructive" className="mt-1 text-xs">
                                 <Ban className="h-3 w-3 mr-1" />
-                                Заблокирован
+                                <span className="sm:hidden">Блок</span>
+                                <span className="hidden sm:inline">Заблокирован</span>
                               </Badge>
                             )}
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="space-y-1 text-sm">
-                            <p><span className="font-medium">Логин:</span> {user.username}</p>
-                            <p><span className="font-medium">Email:</span> {user.email}</p>
-                            {user.phone && <p><span className="font-medium">Телефон:</span> {user.phone}</p>}
+                      <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                        <div className="space-y-2 sm:space-y-3">
+                          <div className="space-y-1 text-xs sm:text-sm">
+                            <p className="truncate"><span className="font-medium">Логин:</span> {user.username}</p>
+                            <p className="truncate"><span className="font-medium">Email:</span> {user.email}</p>
+                            {user.phone && <p className="truncate"><span className="font-medium">Тел:</span> {user.phone}</p>}
                           </div>
                           
                           <div className="flex items-center gap-2">
                             <Badge 
                               variant={user.role === 'admin' ? 'destructive' : user.role === 'manager' ? 'secondary' : 'outline'}
+                              className="text-xs"
                             >
-                              <ShieldCheck className="h-3 w-3 mr-1" />
-                              {user.role === 'admin' ? 'Администратор' : user.role === 'manager' ? 'Менеджер' : 'Пользователь'}
+                              <ShieldCheck className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">
+                                {user.role === 'admin' ? 'Админ' : user.role === 'manager' ? 'Менеджер' : 'Юзер'}
+                              </span>
                             </Badge>
                           </div>
 
                           <div className="flex flex-col gap-2 pt-2 border-t">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Роль:</span>
+                              <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Роль:</span>
                               <Select
                                 value={user.role}
                                 onValueChange={(value) => handleChangeRole(user.id, value as any)}
                               >
-                                <SelectTrigger className="w-full h-8 text-sm">
+                                <SelectTrigger className="w-full min-h-[36px] h-auto text-xs sm:text-sm">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="user">Пользователь</SelectItem>
-                                  <SelectItem value="manager">Менеджер</SelectItem>
-                                  <SelectItem value="admin">Администратор</SelectItem>
+                                  <SelectItem value="user" className="text-xs sm:text-sm">Юзер</SelectItem>
+                                  <SelectItem value="manager" className="text-xs sm:text-sm">Менеджер</SelectItem>
+                                  <SelectItem value="admin" className="text-xs sm:text-sm">Админ</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -575,18 +588,20 @@ const Admin: React.FC = () => {
                             <Button
                               variant={user.isBlocked ? "outline" : "destructive"}
                               size="sm"
-                              className="w-full"
+                              className="w-full min-h-[40px] text-xs sm:text-sm"
                               onClick={() => handleToggleBlock(user.id, user.isBlocked || false)}
                             >
                               {user.isBlocked ? (
                                 <>
-                                  <ShieldCheck className="h-4 w-4 mr-2" />
-                                  Разблокировать
+                                  <ShieldCheck className="h-4 w-4 mr-2 flex-shrink-0" />
+                                  <span className="sm:hidden">Разблок</span>
+                                  <span className="hidden sm:inline">Разблокировать</span>
                                 </>
                               ) : (
                                 <>
-                                  <Ban className="h-4 w-4 mr-2" />
-                                  Заблокировать
+                                  <Ban className="h-4 w-4 mr-2 flex-shrink-0" />
+                                  <span className="sm:hidden">Блок</span>
+                                  <span className="hidden sm:inline">Заблокировать</span>
                                 </>
                               )}
                             </Button>

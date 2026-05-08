@@ -215,7 +215,7 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
                   size="icon"
                   className={`relative h-10 w-10 ${mutedTextClass} hover:text-primary`}
                 >
-                  <Link to={isAdmin ? "/admin" : "/manager/orders"}>
+                  <Link to={isAdmin ? "/admin?tab=orders" : "/manager/orders"}>
                     <Package className="h-5 w-5" />
                   </Link>
                 </Button>
