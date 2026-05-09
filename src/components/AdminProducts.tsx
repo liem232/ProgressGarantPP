@@ -421,20 +421,22 @@ const AdminProducts: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Создать новую категорию</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Название новой категории"
+                  className="flex-1"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleCreateCategory}
                   disabled={!newCategoryName.trim()}
+                  className="w-full sm:w-auto"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Создать
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Создать</span>
                 </Button>
               </div>
             </div>

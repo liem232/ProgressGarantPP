@@ -267,7 +267,7 @@ const StockManagement: React.FC = () => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+              className="px-3 py-2 border border-input bg-background rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-full sm:w-auto sm:min-w-[180px]"
             >
               {categories.map(category => (
                 <option key={category} value={category}>{category}</option>

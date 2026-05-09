@@ -283,6 +283,9 @@ const updateStockForOrder = async (items: OrderItem[], delta: number): Promise<v
 const MAX_ORDERS_PER_DAY = 3;
 
 export const checkOrderLimit = async (userId?: string): Promise<{ allowed: boolean; remaining: number }> => {
+  // ВРЕМЕННО отключено до создания индекса в Firestore
+  return { allowed: true, remaining: MAX_ORDERS_PER_DAY };
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
@@ -295,7 +298,7 @@ export const checkOrderLimit = async (userId?: string): Promise<{ allowed: boole
       const orderDate = new Date(o.date);
       return orderDate >= today && orderDate < tomorrow;
     });
-    
+
     // Для незалогиненых проверяем по email/телефону из localStorage
     const remaining = Math.max(0, MAX_ORDERS_PER_DAY - todayOrders.length);
     return { allowed: remaining > 0, remaining };
@@ -305,7 +308,7 @@ export const checkOrderLimit = async (userId?: string): Promise<{ allowed: boole
     // Запрос заказов за сегодня
     const startOfDay = Timestamp.fromDate(today);
     const endOfDay = Timestamp.fromDate(tomorrow);
-    
+
     let q;
     if (userId) {
       q = query(
@@ -328,7 +331,7 @@ export const checkOrderLimit = async (userId?: string): Promise<{ allowed: boole
     const snapshot = await getDocs(q);
     const todayOrderCount = snapshot.size;
     const remaining = Math.max(0, MAX_ORDERS_PER_DAY - todayOrderCount);
-    
+
     return { allowed: remaining > 0, remaining };
   } catch (error) {
     console.error('checkOrderLimit error:', error);
