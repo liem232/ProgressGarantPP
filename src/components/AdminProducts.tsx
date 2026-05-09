@@ -130,8 +130,8 @@ const AdminProducts: React.FC = () => {
         description: formData.description || '',
         inStock: formData.inStock ?? true,
         image: formData.image || '/img/placeholder.png',
-        volume: formData.volume,
-        strength: formData.strength,
+        volume: formData.volume || '',
+        strength: formData.strength || '',
         quantity: Number(formData.quantity) || 0,
       };
 
