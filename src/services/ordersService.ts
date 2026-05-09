@@ -247,12 +247,20 @@ export const updateOrderStatus = async (
       const previousStatus = orders[index].status;
       orders[index].status = status;
       
-      // Резервируем товары при смене на "в обработке"
-      if (previousStatus !== 'processing' && status === 'processing') {
+  // Резервируем товары при смене на "в обработке"
+      if (previousStatus === 'pending' && status === 'processing') {
         await updateStockForOrder(order.items, -1);
       }
-      // Возвращаем товары при отмене заказа
-      else if (previousStatus === 'processing' && status === 'cancelled') {
+      // Возвращаем товары при отмене заказа, если он был обработан
+      else if ((previousStatus === 'processing' || previousStatus === 'completed') && status === 'cancelled') {
+        await updateStockForOrder(order.items, 1);
+      }
+      // Списываем, если сразу выполнен
+      else if (previousStatus === 'pending' && status === 'completed') {
+        await updateStockForOrder(order.items, -1);
+      }
+      // Возвращаем, если вернули в ожидание
+      else if (previousStatus === 'processing' && status === 'pending') {
         await updateStockForOrder(order.items, 1);
       }
       
@@ -270,12 +278,21 @@ export const updateOrderStatus = async (
   // Обновляем статус
   await updateDoc(docRef, { status });
   
-  // Резервируем товары при смене на "в обработке"
-  if (previousStatus !== 'processing' && status === 'processing') {
+  // Логика пересчета наличия:
+  // 1. При переходе в "processing" (в обработке) - списываем (резервируем)
+  if (previousStatus === 'pending' && status === 'processing') {
     await updateStockForOrder(order.items, -1);
   }
-  // Возвращаем товары при отмене заказа
-  else if (previousStatus === 'processing' && status === 'cancelled') {
+  // 2. При отмене ("cancelled") - если заказ был в "processing" или "completed", возвращаем товары
+  else if ((previousStatus === 'processing' || previousStatus === 'completed') && status === 'cancelled') {
+    await updateStockForOrder(order.items, 1);
+  }
+  // 3. Если заказ из "pending" сразу идет в "completed" - тоже списываем
+  else if (previousStatus === 'pending' && status === 'completed') {
+    await updateStockForOrder(order.items, -1);
+  }
+  // 4. Если из "processing" возвращаем в "pending" - возвращаем товары (разрезервируем)
+  else if (previousStatus === 'processing' && status === 'pending') {
     await updateStockForOrder(order.items, 1);
   }
 };
