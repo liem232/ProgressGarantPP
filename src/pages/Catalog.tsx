@@ -10,10 +10,9 @@ import { Slider } from '@/components/ui/slider';
 import { ShoppingCart, Search, Filter, Package, Grid, List } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { brands } from '@/data/products';
+import { categories, brands } from '@/data/products';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts } from '@/services/productsService';
-import { getCategories } from '@/services/categoriesService';
 
 // Функция санитизации поискового запроса
 const sanitizeSearchQuery = (query: string): string => {
@@ -52,18 +51,6 @@ const Catalog: React.FC = () => {
     queryKey: ['products'],
     queryFn: getProducts,
   });
-
-  const { data: categoriesData = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories,
-  });
-
-  // Fallback категории если из Firestore ничего не загрузилось
-  const defaultCategoryNames = ['Кальяны', 'Табак', 'Бестабачные', 'Электронные', 'Чаши', 'Аксессуары', 'Уголь', 'Мундштуки'];
-  
-  // Формируем список категорий для фильтра (из Firestore или fallback)
-  const categoryNames = categoriesData.length > 0 ? categoriesData.map(c => c.name) : defaultCategoryNames;
-  const categories = ['Все товары', ...categoryNames];
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {

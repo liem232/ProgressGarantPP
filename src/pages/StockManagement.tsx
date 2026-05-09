@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Search, Package, Plus, Minus, Save, RefreshCw, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts, updateProduct } from '@/services/productsService';
-import { getCategories } from '@/services/categoriesService';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -28,17 +27,7 @@ const StockManagement: React.FC = () => {
     queryFn: getProducts,
   });
 
-  const { data: categoriesData = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories,
-  });
-
-  // Fallback категории если из Firestore ничего не загрузилось
-  const defaultCategoryNames = ['Кальяны', 'Табак', 'Бестабачные', 'Электронные', 'Чаши', 'Аксессуары', 'Уголь', 'Мундштуки'];
-  
-  // Формируем список категорий для фильтра (из Firestore или fallback)
-  const categoryNames = categoriesData.length > 0 ? categoriesData.map(c => c.name) : defaultCategoryNames;
-  const categories = ['Все товары', ...categoryNames];
+  const categories = ['Все товары', ...Array.from(new Set(products.map((p: any) => p.category)))];
 
   const updateStockMutation = useMutation({
     mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
