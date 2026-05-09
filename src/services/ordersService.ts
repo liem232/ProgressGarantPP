@@ -93,7 +93,8 @@ const incrementOrderCounter = async (): Promise<number> => {
     const current = counterDoc.exists() ? counterDoc.data()?.value || 0 : 0;
     const next = current >= 1000 ? 1 : current + 1;
 
-    await setDoc(counterRef, { value: next }, { merge: true });
+    // Используем setDoc с merge, но если упадет - игнорируем
+    await setDoc(counterRef, { value: next }, { merge: true }).catch(e => console.warn('Failed to sync counter to Firestore:', e));
     localStorage.setItem('progressgarant_order_counter', next.toString());
     return next;
   } catch (error) {
