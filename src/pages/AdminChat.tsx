@@ -189,7 +189,29 @@ const AdminChat: React.FC = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      setAttachments((prev) => [...prev, ...Array.from(files)]);
+      const MAX_FILE_SIZE = 900 * 1024; // 900KB max
+      const validFiles: File[] = [];
+      const rejectedFiles: string[] = [];
+
+      Array.from(files).forEach((file) => {
+        if (file.size <= MAX_FILE_SIZE) {
+          validFiles.push(file);
+        } else {
+          rejectedFiles.push(`${file.name} (${(file.size / 1024).toFixed(0)}KB)`);
+        }
+      });
+
+      if (rejectedFiles.length > 0) {
+        toast({
+          title: 'Файлы слишком большие',
+          description: `Максимальный размер: 900KB. Отклонены: ${rejectedFiles.join(', ')}`,
+          variant: 'destructive',
+        });
+      }
+
+      if (validFiles.length > 0) {
+        setAttachments((prev) => [...prev, ...validFiles]);
+      }
     }
   };
 

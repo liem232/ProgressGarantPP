@@ -287,49 +287,41 @@ export const subscribeToMessages = (
   });
 };
 
+// Helper to convert File to Base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 export const uploadFile = async (
   file: File,
   orderId?: string
 ): Promise<ChatAttachment | null> => {
-  if (!isFirebaseConfigured || !storage) {
-    // Fallback - create a fake attachment for demo
-    return {
-      id: Date.now().toString(),
-      name: file.name,
-      url: URL.createObjectURL(file),
-      type: file.type,
-      size: file.size,
-    };
+  // Check file size (Firestore limit ~1MB per document, leave room for other data)
+  const MAX_FILE_SIZE = 900 * 1024; // 900KB max
+  if (file.size > MAX_FILE_SIZE) {
+    console.warn('File too large for base64 storage:', file.name, file.size);
+    throw new Error('File too large. Maximum size is 900KB.');
   }
 
   try {
-    const fileName = `${Date.now()}_${file.name}`;
-    const filePath = orderId
-      ? `order_files/${orderId}/${fileName}`
-      : `chat_files/${fileName}`;
-    const storageRef = ref(storage, filePath);
-
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
+    const base64Data = await fileToBase64(file);
+    const fileId = `${Date.now()}_${file.name}`;
 
     return {
-      id: fileName,
+      id: fileId,
       name: file.name,
-      url: downloadURL,
+      url: base64Data, // Store as base64 data URL
       type: file.type,
       size: file.size,
     };
   } catch (error) {
-    console.error('Error uploading file to Firebase Storage:', error);
-    // Fallback to local blob URL if Firebase upload fails
-    console.warn('Falling back to local blob URL for file:', file.name);
-    return {
-      id: Date.now().toString(),
-      name: file.name,
-      url: URL.createObjectURL(file),
-      type: file.type,
-      size: file.size,
-    };
+    console.error('Error converting file to base64:', error);
+    return null;
   }
 };
 
