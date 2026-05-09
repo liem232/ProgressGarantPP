@@ -22,6 +22,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts } from '@/services/productsService';
+import { getCategories } from '@/services/categoriesService';
 
 const Index = () => {
   const { addToCart } = useCart();
@@ -31,6 +32,11 @@ const Index = () => {
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
   });
 
   const handleAddToCart = (product: any) => {
@@ -171,17 +177,6 @@ const Index = () => {
     setIsUserInteracting(false);
   };
 
-  // Категории с изображениями
-  const categories = [
-    { title: 'Кальяны', count: 50, image: '/img/catalog1.jpg' },
-    { title: 'Табак', count: 200, image: '/img/catalog2.jpg' },
-    { title: 'Бестабачные', count: 30, image: '/img/catalog3.jpg' },
-    { title: 'Электронные', count: 80, image: '/img/catalog4.jpg' },
-    { title: 'Чаши', count: 40, image: '/img/catalog5.jpg' },
-    { title: 'Аксессуары', count: 120, image: '/img/catalog6.png' },
-    { title: 'Уголь', count: 25, image: '/img/catalog7.jpg' },
-    { title: 'Мундштуки', count: 60, image: '/img/catalog8.jpg' },
-  ];
 
 
   const ProductCard = ({ product }: { product: any }) => (
@@ -357,22 +352,21 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {categories.map((category, index) => (
               <Link 
-                key={index} 
+                key={category.id || index} 
                 to="/catalog"
                 className="group relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-all"
               >
                 {/* Фото категории */}
                 <img 
-                  src={category.image} 
-                  alt={category.title}
+                  src={category.image || '/img/catalog1.jpg'} 
+                  alt={category.name}
                   className={`absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!isAuthenticated ? 'blur-sm' : ''}`}
                 />
                 {/* Затемнение снизу */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                 {/* Текст */}
                 <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="text-white font-bold text-lg mb-1">{category.title}</h3>
-                  <p className="text-white/90 text-sm">{category.count} товаров</p>
+                  <h3 className="text-white font-bold text-lg mb-1">{category.name}</h3>
                 </div>
                 {/* Блюр оверлей для неавторизованных */}
                 {!isAuthenticated && (

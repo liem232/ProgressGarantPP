@@ -10,9 +10,10 @@ import { Slider } from '@/components/ui/slider';
 import { ShoppingCart, Search, Filter, Package, Grid, List } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { categories, brands } from '@/data/products';
+import { brands } from '@/data/products';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts } from '@/services/productsService';
+import { getCategories } from '@/services/categoriesService';
 
 // Функция санитизации поискового запроса
 const sanitizeSearchQuery = (query: string): string => {
@@ -51,6 +52,14 @@ const Catalog: React.FC = () => {
     queryKey: ['products'],
     queryFn: getProducts,
   });
+
+  const { data: categoriesData = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+  });
+
+  // Формируем список категорий для фильтра
+  const categories = ['Все товары', ...categoriesData.map(c => c.name)];
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {

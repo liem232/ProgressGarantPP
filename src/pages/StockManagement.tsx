@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Search, Package, Plus, Minus, Save, RefreshCw, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getProducts, updateProduct } from '@/services/productsService';
+import { getCategories } from '@/services/categoriesService';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -26,6 +27,14 @@ const StockManagement: React.FC = () => {
     queryKey: ['products'],
     queryFn: getProducts,
   });
+
+  const { data: categoriesData = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+  });
+
+  // Формируем список категорий для фильтра
+  const categories = ['Все товары', ...categoriesData.map(c => c.name)];
 
   const updateStockMutation = useMutation({
     mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
@@ -55,8 +64,6 @@ const StockManagement: React.FC = () => {
   });
 
   const outOfStockCount = products.filter((product: any) => product.quantity === 0).length;
-
-  const categories = ['Все товары', ...Array.from(new Set(products.map((p: any) => p.category)))];
 
   const handleStockUpdate = (productId: string, newQuantity: number) => {
     if (newQuantity < 0) {
