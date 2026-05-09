@@ -15,10 +15,9 @@ import { seedProducts } from '@/services/seedService';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
 import AdminProducts from '@/components/AdminProducts';
-import AdminCategories from '@/components/AdminCategories';
-import { getCollection, updateDoc, getDocById } from '@/services/firestoreService';
 import StockManagement from '@/pages/StockManagement';
 import AdminReports from '@/pages/AdminReports';
+import { getCollection, updateDoc, getDocById } from '@/services/firestoreService';
 
 interface AdminUser {
   id: string;
@@ -256,7 +255,6 @@ const Admin: React.FC = () => {
             <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Обзор</TabsTrigger>
             <TabsTrigger value="orders" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Заказы ({orders.length})</TabsTrigger>
             <TabsTrigger value="products" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Товары</TabsTrigger>
-            <TabsTrigger value="categories" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Категории</TabsTrigger>
             <TabsTrigger value="stock" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Наличие</TabsTrigger>
             <TabsTrigger value="reports" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Отчетность</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Пользователи ({users.length})</TabsTrigger>
@@ -615,10 +613,6 @@ const Admin: React.FC = () => {
                 </div>
               )}
             </div>
-          </TabsContent>
-
-          <TabsContent value="categories" className="mt-6">
-            <AdminCategories />
           </TabsContent>
 
           <TabsContent value="stock" className="mt-6">

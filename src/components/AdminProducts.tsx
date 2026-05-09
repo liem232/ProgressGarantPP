@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import { getProducts, Product } from '@/services/productsService';
-import { getCategories, Category } from '@/services/categoriesService';
+import { getCategories, createCategory, deleteCategory, Category } from '@/services/categoriesService';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +36,7 @@ const AdminProducts: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
     price: 0,
@@ -79,6 +80,7 @@ const AdminProducts: React.FC = () => {
   );
 
   const handleOpenDialog = (product?: Product) => {
+    setNewCategoryName('');
     if (product) {
       setEditingProduct(product);
       setFormData(product);
@@ -98,6 +100,81 @@ const AdminProducts: React.FC = () => {
       });
     }
     setIsDialogOpen(true);
+  };
+
+  // Функция для создания новой категории
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    try {
+      const slug = newCategoryName
+        .toLowerCase()
+        .replace(/[^a-zа-яё0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .trim();
+
+      const newCategory = await createCategory({
+        name: newCategoryName.trim(),
+        slug,
+        order: categories.length + 1,
+      });
+
+      // Обновляем список категорий
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+
+      // Автоматически выбираем новую категорию
+      setFormData({ ...formData, category: newCategory.name });
+      setNewCategoryName('');
+
+      toast({
+        title: 'Категория создана',
+        description: `Категория "${newCategory.name}" добавлена`,
+      });
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось создать категорию',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Функция для удаления категории
+  const handleDeleteCategory = async () => {
+    if (!formData.category) return;
+
+    const categoryToDelete = categories.find(c => c.name === formData.category);
+    if (!categoryToDelete) return;
+
+    // Проверяем, категория из БД или fallback (id начинается с цифры = fallback)
+    if (categoryToDelete.id.match(/^\d+$/)) {
+      toast({
+        title: 'Нельзя удалить',
+        description: 'Дефолтные категории нельзя удалить',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (confirm(`Удалить категорию "${categoryToDelete.name}"?`)) {
+      try {
+        await deleteCategory(categoryToDelete.id);
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
+        setFormData({ ...formData, category: '' });
+        toast({
+          title: 'Категория удалена',
+          description: `Категория "${categoryToDelete.name}" удалена`,
+        });
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось удалить категорию',
+          variant: 'destructive',
+        });
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -313,21 +390,52 @@ const AdminProducts: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Категория *</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите категорию" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleDeleteCategory}
+                    disabled={!formData.category}
+                    title="Удалить категорию"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Создать новую категорию</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Название новой категории"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCreateCategory}
+                  disabled={!newCategoryName.trim()}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите категорию" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Создать
+                </Button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
