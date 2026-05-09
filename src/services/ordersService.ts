@@ -12,6 +12,7 @@ import {
   DocumentData,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
+import { updateProduct } from '@/services/productsService';
 
 export interface OrderItem {
   id: string;
@@ -45,27 +46,54 @@ export interface Order {
 }
 
 const COLLECTION_NAME = 'orders';
+const ORDER_COUNTER_COLLECTION = 'orderCounter';
 
 const ordersCollection = isFirebaseConfigured && db
   ? collection(db, COLLECTION_NAME)
   : null;
 
-// Generate short human-readable order ID (6 chars: 2 letters + 4 digits)
-const generateShortOrderId = (): string => {
-  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Without I, O to avoid confusion
-  const digits = '0123456789';
-  
-  let result = '';
-  // 2 random letters
-  for (let i = 0; i < 2; i++) {
-    result += letters.charAt(Math.floor(Math.random() * letters.length));
+const counterCollection = isFirebaseConfigured && db
+  ? collection(db, ORDER_COUNTER_COLLECTION)
+  : null;
+
+// Get current order counter from Firestore or localStorage
+const getOrderCounter = async (): Promise<number> => {
+  if (!isFirebaseConfigured || !db) {
+    // Fallback to localStorage
+    const counter = localStorage.getItem('progressgarant_order_counter');
+    return counter ? parseInt(counter, 10) : 0;
   }
-  // 4 random digits
-  for (let i = 0; i < 4; i++) {
-    result += digits.charAt(Math.floor(Math.random() * digits.length));
+
+  const counterDoc = await getDoc(doc(db, ORDER_COUNTER_COLLECTION, 'counter'));
+  if (counterDoc.exists()) {
+    return counterDoc.data()?.value || 0;
   }
+  return 0;
+};
+
+// Increment order counter (cycle from 1 to 1000)
+const incrementOrderCounter = async (): Promise<number> => {
+  if (!isFirebaseConfigured || !db) {
+    // Fallback to localStorage
+    const current = parseInt(localStorage.getItem('progressgarant_order_counter') || '0', 10);
+    const next = current >= 1000 ? 1 : current + 1;
+    localStorage.setItem('progressgarant_order_counter', next.toString());
+    return next;
+  }
+
+  const counterRef = doc(db, ORDER_COUNTER_COLLECTION, 'counter');
+  const counterDoc = await getDoc(counterRef);
+  const current = counterDoc.exists() ? counterDoc.data()?.value || 0 : 0;
+  const next = current >= 1000 ? 1 : current + 1;
   
-  return result;
+  await setDoc(counterRef, { value: next }, { merge: true });
+  return next;
+};
+
+// Generate sequential order ID (0001-1000)
+const generateOrderId = async (): Promise<string> => {
+  const counter = await incrementOrderCounter();
+  return counter.toString().padStart(4, '0');
 };
 
 // Fallback to localStorage
@@ -79,15 +107,15 @@ const saveLocalOrders = (orders: Order[]) => {
 };
 
 export const createOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> => {
-  // Generate short human-readable order ID
-  const shortId = generateShortOrderId();
+  // Generate sequential order ID (0001-1000)
+  const orderId = await generateOrderId();
   
   if (!isFirebaseConfigured || !ordersCollection || !db) {
     // Fallback to localStorage
     const orders = getLocalOrders();
     const newOrder: Order = {
       ...orderData,
-      id: shortId,
+      id: orderId,
       date: new Date().toISOString(),
     };
     orders.push(newOrder);
@@ -95,8 +123,8 @@ export const createOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> 
     return newOrder;
   }
 
-  // Firebase mode - use setDoc with custom short ID
-  const docRef = doc(db, COLLECTION_NAME, shortId);
+  // Firebase mode - use setDoc with sequential ID
+  const docRef = doc(db, COLLECTION_NAME, orderId);
   await setDoc(docRef, {
     ...orderData,
     createdAt: Timestamp.now(),
@@ -104,7 +132,7 @@ export const createOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> 
 
   return {
     ...orderData,
-    id: shortId,
+    id: orderId,
   };
 };
 
@@ -197,12 +225,12 @@ export const updateOrderStatus = async (
       const previousStatus = orders[index].status;
       orders[index].status = status;
       
-      // Если статус меняется на "выполнен", обновляем наличие товаров
-      if (previousStatus !== 'completed' && status === 'completed') {
+      // Резервируем товары при смене на "в обработке"
+      if (previousStatus !== 'processing' && status === 'processing') {
         await updateStockForOrder(order.items, -1);
       }
-      // Если статус меняется с "выполнен" на другой, возвращаем товары
-      else if (previousStatus === 'completed' && status !== 'completed') {
+      // Возвращаем товары при отмене заказа
+      else if (previousStatus === 'processing' && status === 'cancelled') {
         await updateStockForOrder(order.items, 1);
       }
       
@@ -220,12 +248,12 @@ export const updateOrderStatus = async (
   // Обновляем статус
   await updateDoc(docRef, { status });
   
-  // Если статус меняется на "выполнен", обновляем наличие товаров
-  if (previousStatus !== 'completed' && status === 'completed') {
+  // Резервируем товары при смене на "в обработке"
+  if (previousStatus !== 'processing' && status === 'processing') {
     await updateStockForOrder(order.items, -1);
   }
-  // Если статус меняется с "выполнен" на другой, возвращаем товары
-  else if (previousStatus === 'completed' && status !== 'completed') {
+  // Возвращаем товары при отмене заказа
+  else if (previousStatus === 'processing' && status === 'cancelled') {
     await updateStockForOrder(order.items, 1);
   }
 };
