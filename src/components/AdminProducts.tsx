@@ -22,8 +22,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import { getProducts, Product } from '@/services/productsService';
+import { getCategories, Category } from '@/services/categoriesService';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +53,22 @@ const AdminProducts: React.FC = () => {
     queryKey: ['products'],
     queryFn: getProducts,
   });
+
+  const { data: categoriesData = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+  });
+
+  // Fallback категории из каталога (если из БД ничего не загрузилось)
+  const defaultCategories: Category[] = [
+    { id: '1', name: 'Кальяны', slug: 'hookahs', image: '/img/catalog1.jpg', order: 1 },
+    { id: '2', name: 'Табак', slug: 'tobacco', image: '/img/catalog2.jpg', order: 2 },
+    { id: '3', name: 'Бестабачные смеси', slug: 'herbal', image: '/img/catalog3.jpg', order: 3 },
+    { id: '4', name: 'Электронные сигареты', slug: 'electronic', image: '/img/catalog4.jpg', order: 4 },
+    { id: '5', name: 'Аксессуары', slug: 'accessories', image: '/img/catalog6.png', order: 5 },
+  ];
+
+  const categories = categoriesData.length > 0 ? categoriesData : defaultCategories;
 
   const products = productsData as Product[];
 
@@ -295,12 +313,21 @@ const AdminProducts: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Категория *</Label>
-                <Input
-                  id="category"
+                <Select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="Категория"
-                />
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
