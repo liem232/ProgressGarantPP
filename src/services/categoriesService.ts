@@ -40,7 +40,7 @@ const saveLocalCategories = (categories: Category[]) => {
   localStorage.setItem('progressgarant_categories', JSON.stringify(categories));
 };
 
-// Initialize default categories
+// Initialize default categories (соответствуют Index.tsx)
 const initializeDefaultCategories = async (): Promise<void> => {
   const localCategories = getLocalCategories();
   if (localCategories.length === 0) {
