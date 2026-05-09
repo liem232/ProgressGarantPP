@@ -58,8 +58,12 @@ const Catalog: React.FC = () => {
     queryFn: getCategories,
   });
 
-  // Формируем список категорий для фильтра
-  const categories = ['Все товары', ...categoriesData.map(c => c.name)];
+  // Fallback категории если из Firestore ничего не загрузилось
+  const defaultCategoryNames = ['Кальяны', 'Табак', 'Бестабачные', 'Электронные', 'Чаши', 'Аксессуары', 'Уголь', 'Мундштуки'];
+  
+  // Формируем список категорий для фильтра (из Firestore или fallback)
+  const categoryNames = categoriesData.length > 0 ? categoriesData.map(c => c.name) : defaultCategoryNames;
+  const categories = ['Все товары', ...categoryNames];
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {

@@ -4,7 +4,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   doc,
   getDoc,
   updateDoc,
@@ -40,27 +39,55 @@ const saveLocalCategories = (categories: Category[]) => {
   localStorage.setItem('progressgarant_categories', JSON.stringify(categories));
 };
 
-// Initialize default categories (соответствуют Index.tsx)
-const initializeDefaultCategories = async (): Promise<void> => {
-  const localCategories = getLocalCategories();
-  if (localCategories.length === 0) {
-    const defaultCategories: Omit<Category, 'id'>[] = [
-      { name: 'Кальяны', slug: 'hookahs', image: '/img/catalog1.jpg', order: 1 },
-      { name: 'Табак', slug: 'tobacco', image: '/img/catalog2.jpg', order: 2 },
-      { name: 'Бестабачные', slug: 'herbal', image: '/img/catalog3.jpg', order: 3 },
-      { name: 'Электронные', slug: 'electronic', image: '/img/catalog4.jpg', order: 4 },
-      { name: 'Чаши', slug: 'bowls', image: '/img/catalog5.jpg', order: 5 },
-      { name: 'Аксессуары', slug: 'accessories', image: '/img/catalog6.png', order: 6 },
-      { name: 'Уголь', slug: 'charcoal', image: '/img/catalog7.jpg', order: 7 },
-      { name: 'Мундштуки', slug: 'mouthpieces', image: '/img/catalog8.jpg', order: 8 },
-    ];
-    
-    const categoriesWithIds = defaultCategories.map((cat, index) => ({
-      ...cat,
-      id: (index + 1).toString(),
-    }));
-    
-    saveLocalCategories(categoriesWithIds);
+// Default categories data (соответствуют Index.tsx)
+const defaultCategoriesData: Omit<Category, 'id'>[] = [
+  { name: 'Кальяны', slug: 'hookahs', image: '/img/catalog1.jpg', order: 1 },
+  { name: 'Табак', slug: 'tobacco', image: '/img/catalog2.jpg', order: 2 },
+  { name: 'Бестабачные', slug: 'herbal', image: '/img/catalog3.jpg', order: 3 },
+  { name: 'Электронные', slug: 'electronic', image: '/img/catalog4.jpg', order: 4 },
+  { name: 'Чаши', slug: 'bowls', image: '/img/catalog5.jpg', order: 5 },
+  { name: 'Аксессуары', slug: 'accessories', image: '/img/catalog6.png', order: 6 },
+  { name: 'Уголь', slug: 'charcoal', image: '/img/catalog7.jpg', order: 7 },
+  { name: 'Мундштуки', slug: 'mouthpieces', image: '/img/catalog8.jpg', order: 8 },
+];
+
+// Initialize default categories
+const initializeDefaultCategories = async (): Promise<Category[]> => {
+  if (!isFirebaseConfigured || !categoriesCollection || !db) {
+    // Fallback to localStorage
+    const localCategories = getLocalCategories();
+    if (localCategories.length === 0) {
+      const categoriesWithIds = defaultCategoriesData.map((cat, index) => ({
+        ...cat,
+        id: (index + 1).toString(),
+      }));
+      saveLocalCategories(categoriesWithIds);
+      return categoriesWithIds;
+    }
+    return localCategories;
+  }
+
+  // Firestore mode - seed default categories
+  try {
+    const createdCategories: Category[] = [];
+    for (const catData of defaultCategoriesData) {
+      const docRef = await addDoc(categoriesCollection, {
+        ...catData,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      createdCategories.push({
+        ...catData,
+        id: docRef.id,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+    }
+    console.log('Created default categories:', createdCategories.length);
+    return createdCategories;
+  } catch (error) {
+    console.error('Error creating default categories:', error);
+    return [];
   }
 };
 
@@ -68,17 +95,27 @@ const initializeDefaultCategories = async (): Promise<void> => {
 export const getCategories = async (): Promise<Category[]> => {
   if (!isFirebaseConfigured || !categoriesCollection || !db) {
     // Fallback to localStorage
-    await initializeDefaultCategories();
-    return getLocalCategories().sort((a, b) => a.order - b.order);
+    const categories = await initializeDefaultCategories();
+    return categories.sort((a, b) => a.order - b.order);
   }
 
   try {
-    const q = query(categoriesCollection, orderBy('order', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docSnap => ({
+    // Check if Firestore is empty and seed default categories
+    const snapshot = await getDocs(categoriesCollection);
+    if (snapshot.empty) {
+      console.log('Categories collection is empty, initializing defaults...');
+      // Seed default categories
+      return await initializeDefaultCategories();
+    }
+
+    // Простая выборка без orderBy (чтобы не требовать индекс)
+    const categories = snapshot.docs.map(docSnap => ({
       id: docSnap.id,
       ...docSnap.data(),
     })) as Category[];
+    
+    // Сортировка на клиенте
+    return categories.sort((a, b) => a.order - b.order);
   } catch (error) {
     console.error('Error fetching categories:', error);
     return [];

@@ -15,6 +15,8 @@ import {
   Category 
 } from '@/services/categoriesService';
 import { useToast } from '@/hooks/use-toast';
+import { getDocs, collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const AdminCategories: React.FC = () => {
   const { toast } = useToast();
@@ -29,10 +31,48 @@ const AdminCategories: React.FC = () => {
   });
 
   // Fetch categories
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading, refetch } = useQuery({
     queryKey: ['categories'],
     queryFn: getCategories,
   });
+
+  // Функция для создания дефолтных категорий
+  const seedDefaultCategories = async () => {
+    if (!db) return;
+    
+    const defaultCategories = [
+      { name: 'Кальяны', slug: 'hookahs', image: '/img/catalog1.jpg', order: 1 },
+      { name: 'Табак', slug: 'tobacco', image: '/img/catalog2.jpg', order: 2 },
+      { name: 'Бестабачные', slug: 'herbal', image: '/img/catalog3.jpg', order: 3 },
+      { name: 'Электронные', slug: 'electronic', image: '/img/catalog4.jpg', order: 4 },
+      { name: 'Чаши', slug: 'bowls', image: '/img/catalog5.jpg', order: 5 },
+      { name: 'Аксессуары', slug: 'accessories', image: '/img/catalog6.png', order: 6 },
+      { name: 'Уголь', slug: 'charcoal', image: '/img/catalog7.jpg', order: 7 },
+      { name: 'Мундштуки', slug: 'mouthpieces', image: '/img/catalog8.jpg', order: 8 },
+    ];
+
+    try {
+      for (const cat of defaultCategories) {
+        await addDoc(collection(db, 'categories'), {
+          ...cat,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        });
+      }
+      await refetch();
+      toast({
+        title: 'Категории созданы',
+        description: 'Дефолтные категории успешно добавлены в базу данных',
+      });
+    } catch (error) {
+      console.error('Error seeding categories:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось создать категории',
+        variant: 'destructive',
+      });
+    }
+  };
 
   // Reset form
   const resetForm = () => {
@@ -271,8 +311,12 @@ const AdminCategories: React.FC = () => {
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : categories.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Категории не найдены. Добавьте первую категорию.
+            <div className="text-center py-8 space-y-4">
+              <p className="text-muted-foreground">Категории не найдены в базе данных.</p>
+              <Button onClick={seedDefaultCategories} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Создать дефолтные категории
+              </Button>
             </div>
           ) : (
             <ScrollArea className="h-[500px]">
