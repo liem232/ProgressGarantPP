@@ -61,6 +61,7 @@ service cloud.firestore {
         'firstName',
         'lastName',
         'phone',
+        'photoURL',
         'address'
       ]);
     }
@@ -110,9 +111,15 @@ service cloud.firestore {
     
     // Products collection
     match /products/{productId} {
-      allow read: if true;  // Anyone can read products
+      allow read: if true;
       allow create, update: if isAdmin() && isValidProduct();
       allow delete: if isAdmin();
+    }
+
+    // Categories collection
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
     
     // Users collection
@@ -120,6 +127,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         isOwner(userId) ||
         isAdmin() ||
+        isManager() ||
         resource.data.role == 'manager' ||
         resource.data.role == 'admin'
       );
@@ -131,7 +139,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // App config (public readable for authenticated, writable by admin)
+    // App config
     match /appConfig/{docId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin();
@@ -155,7 +163,6 @@ service cloud.firestore {
       allow read, create, update, delete: if false;
     }
 
-    // For thread document rules, use `resource.data` to avoid recursive reads.
     function isThreadDocParticipant() {
       return isAuthenticated() && resource.data.participantIds.hasAny([request.auth.uid]);
     }
@@ -164,7 +171,6 @@ service cloud.firestore {
       return isAuthenticated() && threadId.matches('^' + request.auth.uid + '_.*$');
     }
 
-    // For subcollection rules (messages), we must look up the parent thread.
     function isThreadParticipant(threadId) {
       return isAuthenticated() &&
         get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
@@ -177,9 +183,8 @@ service cloud.firestore {
         get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
     }
 
-    // Private user-manager threads and staff threads
     match /chatThreads/{threadId} {
-      allow read: if isAdmin() || isThreadDocParticipant() || isDeterministicThreadOwner(threadId);
+      allow read: if isAdmin() || isManager() || isThreadDocParticipant() || isDeterministicThreadOwner(threadId);
 
       allow create: if isAuthenticated() && isValidThreadCreate(threadId);
 
@@ -189,7 +194,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if isThreadParticipant(threadId) || isAdmin();
+        allow read: if isThreadParticipant(threadId) || isAdmin() || isManager();
         allow create: if isThreadParticipant(threadId)
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.text is string
@@ -203,7 +208,6 @@ service cloud.firestore {
       }
     }
     
-    // Chat rooms collection
     match /chatRooms/{roomId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin();
