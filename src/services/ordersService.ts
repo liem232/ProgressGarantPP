@@ -1,6 +1,6 @@
 import {
   collection,
-  addDoc,
+  setDoc,
   getDocs,
   query,
   where,
@@ -50,6 +50,24 @@ const ordersCollection = isFirebaseConfigured && db
   ? collection(db, COLLECTION_NAME)
   : null;
 
+// Generate short human-readable order ID (6 chars: 2 letters + 4 digits)
+const generateShortOrderId = (): string => {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Without I, O to avoid confusion
+  const digits = '0123456789';
+  
+  let result = '';
+  // 2 random letters
+  for (let i = 0; i < 2; i++) {
+    result += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+  // 4 random digits
+  for (let i = 0; i < 4; i++) {
+    result += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  
+  return result;
+};
+
 // Fallback to localStorage
 const getLocalOrders = (): Order[] => {
   const data = localStorage.getItem('progressgarant_orders');
@@ -61,12 +79,15 @@ const saveLocalOrders = (orders: Order[]) => {
 };
 
 export const createOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> => {
-  if (!isFirebaseConfigured || !ordersCollection) {
+  // Generate short human-readable order ID
+  const shortId = generateShortOrderId();
+  
+  if (!isFirebaseConfigured || !ordersCollection || !db) {
     // Fallback to localStorage
     const orders = getLocalOrders();
     const newOrder: Order = {
       ...orderData,
-      id: Date.now().toString(),
+      id: shortId,
       date: new Date().toISOString(),
     };
     orders.push(newOrder);
@@ -74,14 +95,16 @@ export const createOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> 
     return newOrder;
   }
 
-  const docRef = await addDoc(ordersCollection, {
+  // Firebase mode - use setDoc with custom short ID
+  const docRef = doc(db, COLLECTION_NAME, shortId);
+  await setDoc(docRef, {
     ...orderData,
     createdAt: Timestamp.now(),
   });
 
   return {
     ...orderData,
-    id: docRef.id,
+    id: shortId,
   };
 };
 
