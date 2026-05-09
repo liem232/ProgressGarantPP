@@ -62,28 +62,36 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     };
   }, []);
 
-  // Пересчитываем позицию при изменении viewport (клавиатура на мобильных)
+  // Пересчитываем позицию при изменении viewport (клавиатура на мобильных) и скролле
   useEffect(() => {
     if (showSuggestions && inputWrapperRef.current) {
-      const handleResize = () => {
-        updateDropdownPosition();
+      let ticking = false;
+      
+      const handlePositionUpdate = () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            updateDropdownPosition();
+            ticking = false;
+          });
+          ticking = true;
+        }
       };
 
-      window.addEventListener('resize', handleResize);
-      window.addEventListener('scroll', handleResize);
+      window.addEventListener('resize', handlePositionUpdate);
+      window.addEventListener('scroll', handlePositionUpdate, true); // capture phase для всех скроллов
       
       // Для мобильных устройств с visualViewport
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', handleResize);
-        window.visualViewport.addEventListener('scroll', handleResize);
+        window.visualViewport.addEventListener('resize', handlePositionUpdate);
+        window.visualViewport.addEventListener('scroll', handlePositionUpdate);
       }
 
       return () => {
-        window.removeEventListener('resize', handleResize);
-        window.removeEventListener('scroll', handleResize);
+        window.removeEventListener('resize', handlePositionUpdate);
+        window.removeEventListener('scroll', handlePositionUpdate, true);
         if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', handleResize);
-          window.visualViewport.removeEventListener('scroll', handleResize);
+          window.visualViewport.removeEventListener('resize', handlePositionUpdate);
+          window.visualViewport.removeEventListener('scroll', handlePositionUpdate);
         }
       };
     }
@@ -161,9 +169,11 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const updateDropdownPosition = () => {
     if (inputWrapperRef.current) {
       const rect = inputWrapperRef.current.getBoundingClientRect();
+      // Для fixed позиционирования используем координаты относительно viewport
+      // без добавления scrollY/scrollX
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 4,
+        left: rect.left,
         width: rect.width
       });
     }
