@@ -16,9 +16,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { firebaseApp } from '@/lib/firebase';
 import {
-  uploadFile,
   ChatMessage,
-  ChatAttachment,
   getOrCreateUserManagerThread,
   sendThreadMessage,
   subscribeToThreadMessages,
@@ -486,7 +484,7 @@ const ChatWidget: React.FC = () => {
                   size="icon"
                   className="h-11 w-11 shrink-0 rounded-xl"
                   onClick={handleSend}
-                  disabled={isLoading || (!inputText.trim() && attachments.length === 0)}
+                  disabled={isLoading || !inputText.trim()}
                 >
                   <Send className="h-5 w-5" />
                 </Button>
