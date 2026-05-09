@@ -5,11 +5,25 @@ import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Plus, Minus, Trash2, Package, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const Cart: React.FC = () => {
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const safeUpdateQuantity = async (productId: string, quantity: number) => {
+    try {
+      await updateQuantity(productId, quantity);
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось изменить количество',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
@@ -114,7 +128,7 @@ const Cart: React.FC = () => {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => void safeUpdateQuantity(item.id, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="h-3 w-3" />
@@ -126,7 +140,7 @@ const Cart: React.FC = () => {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => void safeUpdateQuantity(item.id, item.quantity + 1)}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>

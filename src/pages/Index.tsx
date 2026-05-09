@@ -45,12 +45,20 @@ const Index = () => {
     { title: 'Мундштуки', count: 60, image: '/img/catalog8.jpg' },
   ];
 
-  const handleAddToCart = (product: any) => {
-    addToCart(product);
-    toast({
-      title: "Товар добавлен в корзину",
-      description: `${product.name} успешно добавлен в корзину`,
-    });
+  const handleAddToCart = async (product: any) => {
+    try {
+      await addToCart(product);
+      toast({
+        title: "Товар добавлен в корзину",
+        description: `${product.name} успешно добавлен в корзину`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось добавить товар в корзину',
+        variant: 'destructive',
+      });
+    }
   };
 
   const popularProducts = products.slice(0, 8);

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { getProducts } from '@/services/productsService';
 
 export interface Product {
   id: string;
@@ -20,9 +21,9 @@ interface CartItem extends Product {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
+  addToCart: (product: Product, quantity?: number) => Promise<void>;
   removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -32,6 +33,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const itemsRef = useRef<CartItem[]>([]);
 
   useEffect(() => {
     const savedCart = localStorage.getItem('progressgarant_cart');
@@ -48,30 +50,33 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('progressgarant_cart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product, quantity: number = 1) => {
-    // Проверяем наличие товара
-    if (product.quantity <= 0) {
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  const addToCart = async (product: Product, quantity: number = 1) => {
+    const products = await getProducts();
+    const current = products.find(p => p.id === product.id);
+    const available = current?.quantity ?? 0;
+
+    const existingItem = itemsRef.current.find(item => item.id === product.id);
+    const currentCartQuantity = existingItem ? existingItem.quantity : 0;
+    const newQuantity = currentCartQuantity + quantity;
+
+    if (available <= 0) {
       throw new Error('Товар отсутствует на складе');
     }
-    
+
+    if (newQuantity > available) {
+      throw new Error(`Недостаточно товара на складе. Доступно: ${available} шт.`);
+    }
+
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      const currentCartQuantity = existingItem ? existingItem.quantity : 0;
-      const newQuantity = currentCartQuantity + quantity;
-      
-      // Проверяем, что запрошенное количество не превышает наличие
-      if (newQuantity > product.quantity) {
-        throw new Error(`Недостаточно товара на складе. Доступно: ${product.quantity} шт.`);
+      const prevExisting = prevItems.find(item => item.id === product.id);
+      if (prevExisting) {
+        return prevItems.map(item => (item.id === product.id ? { ...item, quantity: newQuantity } : item));
       }
-      
-      if (existingItem) {
-        return prevItems.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: newQuantity }
-            : item
-        );
-      }
-      return [...prevItems, { ...product, quantity }];
+      return [...prevItems, { ...product, quantity: newQuantity }];
     });
   };
 
@@ -79,25 +84,27 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setItems(prevItems => prevItems.filter(item => item.id !== productId));
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = async (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
     }
-    
-    setItems(prevItems => {
-      const item = prevItems.find(item => item.id === productId);
-      if (!item) return prevItems;
-      
-      // Проверяем, что новое количество не превышает наличие на складе
-      if (quantity > item.quantity) {
-        throw new Error(`Недостаточно товара на складе. Доступно: ${item.quantity} шт.`);
-      }
-      
-      return prevItems.map(cartItem =>
-        cartItem.id === productId ? { ...cartItem, quantity } : cartItem
-      );
-    });
+
+    const products = await getProducts();
+    const current = products.find(p => p.id === productId);
+    const available = current?.quantity ?? 0;
+
+    if (available <= 0) {
+      throw new Error('Товар отсутствует на складе');
+    }
+
+    if (quantity > available) {
+      throw new Error(`Недостаточно товара на складе. Доступно: ${available} шт.`);
+    }
+
+    setItems(prevItems =>
+      prevItems.map(cartItem => (cartItem.id === productId ? { ...cartItem, quantity } : cartItem))
+    );
   };
 
   const clearCart = () => {

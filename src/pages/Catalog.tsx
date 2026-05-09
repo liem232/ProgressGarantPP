@@ -91,12 +91,20 @@ const Catalog: React.FC = () => {
     return filtered;
   }, [products, searchTerm, selectedCategory, selectedBrand, priceRange, sortBy]);
 
-  const handleAddToCart = (product: any) => {
-    addToCart(product);
-    toast({
-      title: "Товар добавлен в корзину",
-      description: `${product.name} успешно добавлен в корзину`,
-    });
+  const handleAddToCart = async (product: any) => {
+    try {
+      await addToCart(product);
+      toast({
+        title: 'Товар добавлен в корзину',
+        description: `${product.name} успешно добавлен в корзину`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось добавить товар в корзину',
+        variant: 'destructive',
+      });
+    }
   };
 
   const clearFilters = () => {

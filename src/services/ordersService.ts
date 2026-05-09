@@ -64,11 +64,17 @@ const getOrderCounter = async (): Promise<number> => {
     return counter ? parseInt(counter, 10) : 0;
   }
 
-  const counterDoc = await getDoc(doc(db, ORDER_COUNTER_COLLECTION, 'counter'));
-  if (counterDoc.exists()) {
-    return counterDoc.data()?.value || 0;
+  try {
+    const counterDoc = await getDoc(doc(db, ORDER_COUNTER_COLLECTION, 'counter'));
+    if (counterDoc.exists()) {
+      return counterDoc.data()?.value || 0;
+    }
+    return 0;
+  } catch (error) {
+    console.error('getOrderCounter error:', error);
+    const counter = localStorage.getItem('progressgarant_order_counter');
+    return counter ? parseInt(counter, 10) : 0;
   }
-  return 0;
 };
 
 // Increment order counter (cycle from 1 to 1000)
@@ -81,19 +87,34 @@ const incrementOrderCounter = async (): Promise<number> => {
     return next;
   }
 
-  const counterRef = doc(db, ORDER_COUNTER_COLLECTION, 'counter');
-  const counterDoc = await getDoc(counterRef);
-  const current = counterDoc.exists() ? counterDoc.data()?.value || 0 : 0;
-  const next = current >= 1000 ? 1 : current + 1;
-  
-  await setDoc(counterRef, { value: next }, { merge: true });
-  return next;
+  try {
+    const counterRef = doc(db, ORDER_COUNTER_COLLECTION, 'counter');
+    const counterDoc = await getDoc(counterRef);
+    const current = counterDoc.exists() ? counterDoc.data()?.value || 0 : 0;
+    const next = current >= 1000 ? 1 : current + 1;
+
+    await setDoc(counterRef, { value: next }, { merge: true });
+    localStorage.setItem('progressgarant_order_counter', next.toString());
+    return next;
+  } catch (error) {
+    console.error('incrementOrderCounter error:', error);
+    // Fallback to localStorage if Firestore permissions/indexes prevent counter updates
+    const current = parseInt(localStorage.getItem('progressgarant_order_counter') || '0', 10);
+    const next = current >= 1000 ? 1 : current + 1;
+    localStorage.setItem('progressgarant_order_counter', next.toString());
+    return next;
+  }
 };
 
 // Generate sequential order ID (0001-1000)
 const generateOrderId = async (): Promise<string> => {
-  const counter = await incrementOrderCounter();
-  return counter.toString().padStart(4, '0');
+  try {
+    const counter = await incrementOrderCounter();
+    return counter.toString().padStart(4, '0');
+  } catch (error) {
+    console.error('generateOrderId error:', error);
+    return Date.now().toString();
+  }
 };
 
 // Fallback to localStorage

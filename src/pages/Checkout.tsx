@@ -160,7 +160,7 @@ const Checkout: React.FC = () => {
       console.error('Ошибка:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать заказ. Попробуйте позже.",
+        description: error instanceof Error ? error.message : "Не удалось создать заказ. Попробуйте позже.",
         variant: "destructive"
       });
     } finally {
