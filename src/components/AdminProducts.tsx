@@ -22,8 +22,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import { getProducts, Product } from '@/services/productsService';
+import { getCategories, Category } from '@/services/categoriesService';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +52,11 @@ const AdminProducts: React.FC = () => {
   const { data: productsData = [], isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: getProducts,
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
   });
 
   const products = productsData as Product[];
@@ -295,12 +302,21 @@ const AdminProducts: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Категория *</Label>
-                <Input
-                  id="category"
+                <Select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="Категория"
-                />
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
