@@ -13,6 +13,9 @@ export interface Product {
   volume?: string;
   strength?: string;
   quantity: number;
+  retailPrice?: number;
+  wholesalePrice?: number;
+  minWholesaleQuantity?: number;
 }
 
 interface CartItem extends Product {
@@ -27,11 +30,12 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  isPartner: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const CartProvider: React.FC<{ children: ReactNode; isPartner: boolean }> = ({ children, isPartner }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const itemsRef = useRef<CartItem[]>([]);
 
@@ -112,7 +116,21 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Расчет цены с учетом оптовых цен для партнеров
+  const totalPrice = items.reduce((sum, item) => {
+    let itemPrice = item.price;
+
+    // Если пользователь партнер и товар имеет оптовую цену
+    if (isPartner && item.wholesalePrice && item.minWholesaleQuantity) {
+      // Если количество в корзине соответствует минимальному для опта
+      if (item.quantity >= item.minWholesaleQuantity) {
+        itemPrice = item.wholesalePrice;
+      }
+    }
+
+    return sum + (itemPrice * item.quantity);
+  }, 0);
 
   const value: CartContextType = {
     items,
@@ -121,7 +139,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updateQuantity,
     clearCart,
     totalItems,
-    totalPrice
+    totalPrice,
+    isPartner
   };
 
   return (

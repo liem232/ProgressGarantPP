@@ -57,7 +57,7 @@ const getRoleBadgeColor = (role: string) => {
 };
 
 const Profile: React.FC = () => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, isPartner } = useAuth();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -156,6 +156,11 @@ const Profile: React.FC = () => {
               <Badge className={getRoleBadgeColor(user.role)}>
                 {getRoleLabel(user.role)}
               </Badge>
+              {isPartner && (
+                <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
+                  Партнер
+                </Badge>
+              )}
               <span className="text-muted-foreground text-sm">{user.email}</span>
             </div>
           </div>

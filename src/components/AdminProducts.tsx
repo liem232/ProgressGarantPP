@@ -40,6 +40,9 @@ const AdminProducts: React.FC = () => {
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
     price: 0,
+    retailPrice: 0,
+    wholesalePrice: 0,
+    minWholesaleQuantity: 5,
     category: '',
     brand: '',
     description: '',
@@ -89,6 +92,9 @@ const AdminProducts: React.FC = () => {
       setFormData({
         name: '',
         price: 0,
+        retailPrice: 0,
+        wholesalePrice: 0,
+        minWholesaleQuantity: 5,
         category: '',
         brand: '',
         description: '',
@@ -202,6 +208,9 @@ const AdminProducts: React.FC = () => {
         id: productId,
         name: formData.name || '',
         price: Number(formData.price) || 0,
+        retailPrice: Number(formData.retailPrice) || Number(formData.price) || 0,
+        wholesalePrice: Number(formData.wholesalePrice) || 0,
+        minWholesaleQuantity: Number(formData.minWholesaleQuantity) || 5,
         category: formData.category || '',
         brand: formData.brand || '',
         description: formData.description || '',
@@ -294,7 +303,9 @@ const AdminProducts: React.FC = () => {
                 <TableHead>Название</TableHead>
                 <TableHead>Категория</TableHead>
                 <TableHead>Бренд</TableHead>
-                <TableHead>Цена</TableHead>
+                <TableHead>Розн. цена</TableHead>
+                <TableHead>Опт. цена</TableHead>
+                <TableHead>Мин. опт</TableHead>
                 <TableHead>Наличие</TableHead>
                 <TableHead>Статус</TableHead>
                 <TableHead className="w-[100px]">Действия</TableHead>
@@ -314,6 +325,12 @@ const AdminProducts: React.FC = () => {
                   <TableCell>{product.category}</TableCell>
                   <TableCell>{product.brand}</TableCell>
                   <TableCell>{product.price.toLocaleString('ru-RU')} ₽</TableCell>
+                  <TableCell>
+                    {product.wholesalePrice ? product.wholesalePrice.toLocaleString('ru-RU') + ' ₽' : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {product.minWholesaleQuantity ? product.minWholesaleQuantity + ' шт.' : '-'}
+                  </TableCell>
                   <TableCell>
                     <span className={product.quantity === 0 ? 'text-red-500 font-medium' : 'text-green-600 font-medium'}>
                       {product.quantity || 0} шт.
@@ -346,7 +363,7 @@ const AdminProducts: React.FC = () => {
               ))}
               {filteredProducts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     Товары не найдены
                   </TableCell>
                 </TableRow>
@@ -379,13 +396,36 @@ const AdminProducts: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Цена *</Label>
+                <Label htmlFor="price">Розничная цена *</Label>
                 <Input
                   id="price"
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                   placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wholesalePrice">Оптовая цена</Label>
+                <Input
+                  id="wholesalePrice"
+                  type="number"
+                  value={formData.wholesalePrice}
+                  onChange={(e) => setFormData({ ...formData, wholesalePrice: Number(e.target.value) })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="minWholesaleQuantity">Мин. кол-во для опта</Label>
+                <Input
+                  id="minWholesaleQuantity"
+                  type="number"
+                  min="1"
+                  value={formData.minWholesaleQuantity}
+                  onChange={(e) => setFormData({ ...formData, minWholesaleQuantity: Number(e.target.value) })}
+                  placeholder="5"
                 />
               </div>
               <div className="space-y-2">

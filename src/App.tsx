@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import RouteScrollTop from '@/components/RouteScrollTop';
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import Layout from "./components/Layout";
 import ChatWidget from "./components/ChatWidget";
@@ -33,12 +33,17 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const CartProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isPartner } = useAuth();
+  return <CartProvider isPartner={isPartner}>{children}</CartProvider>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <AuthProvider>
-          <CartProvider>
+          <CartProviderWrapper>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -69,7 +74,7 @@ const App = () => (
               </Layout>
               <ChatWidget />
             </BrowserRouter>
-          </CartProvider>
+          </CartProviderWrapper>
         </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>

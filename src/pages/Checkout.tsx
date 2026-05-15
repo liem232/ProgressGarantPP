@@ -34,9 +34,22 @@ const Checkout: React.FC = () => {
   const [orderLimit, setOrderLimit] = useState({ allowed: true, remaining: 3 });
 
   const { items: cartItems, totalPrice: totalAmount, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, isPartner } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Функция для получения цены товара с учетом оптовых цен
+  const getItemPrice = (item: any) => {
+    if (isPartner && item.wholesalePrice && item.minWholesaleQuantity && item.quantity >= item.minWholesaleQuantity) {
+      return item.wholesalePrice;
+    }
+    return item.price;
+  };
+
+  // Функция для проверки, применяется ли оптовая цена
+  const isWholesalePrice = (item: any) => {
+    return isPartner && item.wholesalePrice && item.minWholesaleQuantity && item.quantity >= item.minWholesaleQuantity;
+  };
 
   useEffect(() => {
     if (user) {
@@ -112,13 +125,20 @@ const Checkout: React.FC = () => {
 
     try {
       const candidateOrder = {
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image,
-        })),
+        items: cartItems.map(item => {
+          const itemPrice = getItemPrice(item);
+          const wholesale = isWholesalePrice(item);
+          return {
+            id: item.id,
+            name: item.name,
+            price: itemPrice,
+            quantity: item.quantity,
+            image: item.image,
+            isWholesale: wholesale,
+            retailPrice: item.price,
+            wholesalePrice: item.wholesalePrice,
+          };
+        }),
         orderData: {
           firstName: orderData.firstName,
           lastName: orderData.lastName,
@@ -388,30 +408,46 @@ const Checkout: React.FC = () => {
               <CardContent className="space-y-4">
                 {/* Товары */}
                 <div className="space-y-3">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex gap-3">
-                      <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="object-cover w-full h-full rounded"
-                          />
-                        ) : (
-                          <Package className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm line-clamp-2">{item.name}</p>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{item.quantity} шт.</span>
-                          <span className="font-medium">
-                            {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
-                          </span>
+                  {cartItems.map((item) => {
+                    const itemPrice = getItemPrice(item);
+                    const wholesale = isWholesalePrice(item);
+                    return (
+                      <div key={item.id} className="flex gap-3">
+                        <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="object-cover w-full h-full rounded"
+                            />
+                          ) : (
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm line-clamp-2">{item.name}</p>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{item.quantity} шт.</span>
+                            <div className="text-right">
+                              <span className={`font-medium ${wholesale ? 'text-green-600' : ''}`}>
+                                {(itemPrice * item.quantity).toLocaleString('ru-RU')} ₽
+                              </span>
+                              {wholesale && (
+                                <div className="text-[10px] text-green-600">
+                                  Оптовая цена ({itemPrice.toLocaleString('ru-RU')} ₽/шт)
+                                </div>
+                              )}
+                              {!wholesale && isPartner && item.wholesalePrice && (
+                                <div className="text-[10px] text-muted-foreground">
+                                  Розничная цена (опт от {item.minWholesaleQuantity} шт.)
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <Separator />

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
   id: string;
@@ -19,6 +20,8 @@ interface User {
   phone?: string;
   photoURL?: string;
   isBlocked?: boolean;
+  isPartner?: boolean;
+  partnerApprovedAt?: any;
 }
 
 interface AuthContextType {
@@ -32,6 +35,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isManager: boolean;
   isUser: boolean;
+  isPartner: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -55,8 +59,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const hasShownPartnerNotification = useRef(false);
 
-  // Load user from Firebase Auth on mount
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
       // Fallback to localStorage if Firebase not configured
@@ -127,6 +132,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: fbUser.uid,
             ...userDocData,
           });
+
+          // Проверка на недавнее получение статуса партнера
+          if (userDocData.isPartner && userDocData.partnerApprovedAt && !hasShownPartnerNotification.current) {
+            const approvedAt = new Date(userDocData.partnerApprovedAt.seconds * 1000);
+            const now = new Date();
+            const timeDiff = (now.getTime() - approvedAt.getTime()) / (1000 * 60); // разница в минутах
+
+            // Если статус получен в течение последних 5 минут
+            if (timeDiff < 5) {
+              toast({
+                title: "Поздравляем!",
+                description: "Вам присвоен статус партнера. Теперь вы можете пользоваться оптовыми ценами в каталоге.",
+              });
+              hasShownPartnerNotification.current = true;
+            }
+          }
         }
       } else {
         setUser(null);
@@ -297,6 +318,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAdmin: user?.role === 'admin',
     isManager: user?.role === 'manager' || user?.role === 'admin',
     isUser: user?.role === 'user',
+    isPartner: user?.isPartner === true,
     isLoading,
     error,
   };

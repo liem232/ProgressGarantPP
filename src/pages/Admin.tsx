@@ -17,6 +17,7 @@ import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
 import AdminProducts from '@/components/AdminProducts';
 import StockManagement from '@/pages/StockManagement';
 import AdminReports from '@/pages/AdminReports';
+import PartnershipRequests from '@/components/PartnershipRequests';
 import { getCollection, updateDoc, getDocById } from '@/services/firestoreService';
 
 interface AdminUser {
@@ -257,6 +258,7 @@ const Admin: React.FC = () => {
             <TabsTrigger value="products" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Товары</TabsTrigger>
             <TabsTrigger value="stock" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Наличие</TabsTrigger>
             <TabsTrigger value="reports" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Отчетность</TabsTrigger>
+            <TabsTrigger value="partnerships" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Партнерство</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Пользователи ({users.length})</TabsTrigger>
           </TabsList>
 
@@ -453,7 +455,17 @@ const Admin: React.FC = () => {
                                 {order.items.map((item) => (
                                   <div key={item.id} className="flex justify-between text-sm">
                                     <span>{item.name} × {item.quantity}</span>
-                                    <span>{(item.price * item.quantity).toLocaleString('ru-RU')} ₽</span>
+                                    <div className="text-right">
+                                      <div className={item.isWholesale ? 'text-green-600 font-medium' : ''}>
+                                        {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {item.price.toLocaleString('ru-RU')} ₽/шт
+                                        {item.isWholesale && (
+                                          <span className="text-green-600 ml-1">(Опт)</span>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -503,6 +515,14 @@ const Admin: React.FC = () => {
 
           <TabsContent value="products" className="mt-6">
             <AdminProducts />
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <AdminReports />
+          </TabsContent>
+
+          <TabsContent value="partnerships" className="mt-6">
+            <PartnershipRequests />
           </TabsContent>
 
           <TabsContent value="users" className="mt-6">

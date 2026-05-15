@@ -250,7 +250,17 @@ const ManagerOrders: React.FC = () => {
                                 <span>
                                   {item.name} × {item.quantity}
                                 </span>
-                                <span>{(item.price * item.quantity).toLocaleString('ru-RU')} ₽</span>
+                                <div className="text-right">
+                                  <div className={item.isWholesale ? 'text-green-600 font-medium' : ''}>
+                                    {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {item.price.toLocaleString('ru-RU')} ₽/шт
+                                    {item.isWholesale && (
+                                      <span className="text-green-600 ml-1">(Опт)</span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             ))}
                           </div>

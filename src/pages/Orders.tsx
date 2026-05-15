@@ -28,7 +28,7 @@ const statusColors = {
 } as const;
 
 const Orders: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isPartner } = useAuth();
 
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['orders', user?.id],
@@ -156,7 +156,17 @@ const Orders: React.FC = () => {
                           {order.items.map((item) => (
                             <div key={item.id} className="flex justify-between text-sm">
                               <span>{item.name} × {item.quantity}</span>
-                              <span>{(item.price * item.quantity).toLocaleString('ru-RU')} ₽</span>
+                              <div className="text-right">
+                                <div className={item.isWholesale ? 'text-green-600 font-medium' : ''}>
+                                  {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {item.price.toLocaleString('ru-RU')} ₽/шт
+                                  {item.isWholesale && (
+                                    <span className="text-green-600 ml-1">(Опт)</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>

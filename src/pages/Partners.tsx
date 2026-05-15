@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,10 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Handshake, 
-  TrendingUp, 
-  Users, 
+import {
+  Handshake,
+  TrendingUp,
+  Users,
   Shield,
   Truck,
   Clock,
@@ -22,8 +23,11 @@ import {
   Send
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { createPartnershipRequest } from '@/services/partnershipService';
 
 const Partners: React.FC = () => {
+  const { user, isAuthenticated, isAdmin, isManager, isPartner } = useAuth();
   const [formData, setFormData] = useState({
     companyName: '',
     contactPerson: '',
@@ -48,37 +52,62 @@ const Partners: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Имитация отправки заявки
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      if (!user?.id) {
+        toast({
+          title: "Ошибка",
+          description: "Для подачи заявки необходимо авторизоваться",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
-    // Сохраняем заявку в localStorage
-    const application = {
-      ...formData,
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      status: 'pending'
-    };
+      const requestId = await createPartnershipRequest({
+        userId: user.id,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+        userEmail: user.email,
+        userPhone: user.phone || formData.phone,
+        companyName: formData.companyName,
+        contactPerson: formData.contactPerson,
+        address: formData.address,
+        businessType: formData.businessType,
+        experience: formData.experience,
+        message: formData.message,
+      });
 
-    const applications = JSON.parse(localStorage.getItem('progressgarant_applications') || '[]');
-    applications.push(application);
-    localStorage.setItem('progressgarant_applications', JSON.stringify(applications));
+      if (requestId) {
+        toast({
+          title: "Заявка отправлена!",
+          description: "Мы свяжемся с вами в течение 24 часов для обсуждения деталей сотрудничества.",
+        });
 
-    toast({
-      title: "Заявка отправлена!",
-      description: "Мы свяжемся с вами в течение 24 часов для обсуждения деталей сотрудничества.",
-    });
-
-    // Очищаем форму
-    setFormData({
-      companyName: '',
-      contactPerson: '',
-      phone: '',
-      email: '',
-      address: '',
-      businessType: '',
-      experience: '',
-      message: ''
-    });
+        // Очищаем форму
+        setFormData({
+          companyName: '',
+          contactPerson: '',
+          phone: '',
+          email: '',
+          address: '',
+          businessType: '',
+          experience: '',
+          message: ''
+        });
+      } else {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось отправить заявку. Попробуйте позже.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting partnership request:', error);
+      toast({
+        title: "Ошибка",
+        description: "Произошла ошибка при отправке заявки",
+        variant: "destructive",
+      });
+    }
 
     setIsSubmitting(false);
   };
@@ -254,18 +283,53 @@ const Partners: React.FC = () => {
                 Подать заявку на партнерство
               </h2>
               <p className="text-muted-foreground mb-8">
-                Заполните форму, и наш менеджер свяжется с вами в течение 24 часов 
+                Заполните форму, и наш менеджер свяжется с вами в течение 24 часов
                 для обсуждения условий сотрудничества.
               </p>
 
-              <form
-                id="orderForm"
-                className="order-form space-y-6"
-                action="https://api.web3forms.com/submit"
-                method="POST"
-              >
-                <input type="hidden" name="access_key" value="83d99d26-1cd2-4c09-8c64-1395b05e31f1" />
-                <input type="hidden" name="subject" value="Заявка на партнерство" />
+              {!isAuthenticated ? (
+                <div className="bg-muted/50 rounded-lg p-6 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    Для подачи заявки на партнерство необходимо авторизоваться
+                  </p>
+                  <Button asChild>
+                    <Link to="/login">Войти в систему</Link>
+                  </Button>
+                </div>
+              ) : isAdmin ? (
+                <div className="bg-muted/50 rounded-lg p-6 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    Эта страница предназначена для клиентов, желающих стать партнерами.
+                  </p>
+                  <Button asChild>
+                    <Link to="/admin">Перейти в админ-панель</Link>
+                  </Button>
+                </div>
+              ) : isManager ? (
+                <div className="bg-muted/50 rounded-lg p-6 text-center">
+                  <p className="text-muted-foreground mb-4">
+                    Эта страница предназначена для клиентов, желающих стать партнерами.
+                  </p>
+                </div>
+              ) : isPartner ? (
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 text-center">
+                  <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <p className="text-green-800 dark:text-green-200 font-medium mb-2">
+                    Вы уже являетесь партнером!
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Вы можете пользоваться оптовыми ценами в каталоге.
+                  </p>
+                  <Button asChild className="mt-4">
+                    <Link to="/catalog">Перейти в каталог</Link>
+                  </Button>
+                </div>
+              ) : (
+                <form
+                  id="orderForm"
+                  className="order-form space-y-6"
+                  onSubmit={handleSubmit}
+                >
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -384,9 +448,9 @@ const Partners: React.FC = () => {
                   />
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-red flex items-center justify-center"
+                <Button
+                  type="submit"
+                  className="w-full"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -397,8 +461,9 @@ const Partners: React.FC = () => {
                       Отправить заявку
                     </>
                   )}
-                </button>
+                </Button>
               </form>
+              )}
             </div>
 
             <div>

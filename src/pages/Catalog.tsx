@@ -36,7 +36,7 @@ const Catalog: React.FC = () => {
   const [sortBy, setSortBy] = useState('name');
 
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isPartner, isAdmin, isManager } = useAuth();
   const { toast } = useToast();
 
   // Получаем поисковый запрос из URL при загрузке
@@ -105,6 +105,51 @@ const Catalog: React.FC = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  // Функция для получения отображаемой цены
+  const getDisplayPrice = (product: any) => {
+    if (isPartner && product.wholesalePrice) {
+      return product.wholesalePrice;
+    }
+    return product.price;
+  };
+
+  // Функция для получения текста цены
+  const getPriceText = (product: any) => {
+    const displayPrice = getDisplayPrice(product);
+    const showWholesaleInfo = isPartner && product.wholesalePrice;
+    const showBothPrices = isAdmin || isManager;
+
+    if (showBothPrices && product.wholesalePrice) {
+      return (
+        <div className="space-y-1">
+          <div className="text-sm font-bold text-foreground">
+            {product.price.toLocaleString('ru-RU')} ₽
+          </div>
+          <div className="text-xs text-green-600">
+            Опт: {product.wholesalePrice.toLocaleString('ru-RU')} ₽
+            {product.minWholesaleQuantity && ` (от ${product.minWholesaleQuantity} шт.)`}
+          </div>
+        </div>
+      );
+    }
+
+    if (showWholesaleInfo) {
+      return (
+        <div className="space-y-1">
+          <span className="text-sm font-bold text-green-600">
+            {displayPrice.toLocaleString('ru-RU')} ₽
+          </span>
+          {product.minWholesaleQuantity && (
+            <span className="text-[10px] text-muted-foreground block">
+              от {product.minWholesaleQuantity} шт.
+            </span>
+          )}
+        </div>
+      );
+    }
+    return `${displayPrice.toLocaleString('ru-RU')} ₽`;
   };
 
   const clearFilters = () => {
@@ -295,11 +340,9 @@ const Catalog: React.FC = () => {
                     </Link>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">
-                          {product.price.toLocaleString('ru-RU')} ₽
-                        </span>
-                        <Button 
-                          size="sm" 
+                        {getPriceText(product)}
+                        <Button
+                          size="sm"
                           className="h-7 px-2 shadow-primary dark:shadow-none"
                           onClick={() => handleAddToCart(product)}
                           disabled={!product.inStock || product.quantity === 0}
@@ -347,11 +390,9 @@ const Catalog: React.FC = () => {
                     <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-foreground">
-                          {product.price.toLocaleString('ru-RU')} ₽
-                        </span>
-                        <Button 
-                          size="sm" 
+                        {getPriceText(product)}
+                        <Button
+                          size="sm"
                           className="h-8 shadow-primary dark:shadow-none"
                           onClick={() => handleAddToCart(product)}
                           disabled={!product.inStock || product.quantity === 0}

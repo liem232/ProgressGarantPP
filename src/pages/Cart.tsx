@@ -9,9 +9,49 @@ import { useToast } from '@/hooks/use-toast';
 
 const Cart: React.FC = () => {
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems, clearCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isPartner } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Функция для получения цены товара с учетом оптовых цен
+  const getItemPrice = (item: any) => {
+    if (isPartner && item.wholesalePrice && item.minWholesaleQuantity && item.quantity >= item.minWholesaleQuantity) {
+      return item.wholesalePrice;
+    }
+    return item.price;
+  };
+
+  // Функция для получения текста цены
+  const getPriceText = (item: any) => {
+    const displayPrice = getItemPrice(item);
+    const isWholesale = isPartner && item.wholesalePrice && item.minWholesaleQuantity && item.quantity >= item.minWholesaleQuantity;
+
+    if (isWholesale) {
+      return (
+        <div className="space-y-1">
+          <div className="font-bold text-sm text-green-600">
+            {displayPrice.toLocaleString('ru-RU')} ₽
+          </div>
+          {item.minWholesaleQuantity && item.quantity < item.minWholesaleQuantity && (
+            <div className="text-[10px] text-muted-foreground">
+              Опт от {item.minWholesaleQuantity} шт.
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        <div className="font-bold text-sm text-foreground">
+          {displayPrice.toLocaleString('ru-RU')} ₽
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {item.price.toLocaleString('ru-RU')} ₽/шт
+        </div>
+      </div>
+    );
+  };
 
   const safeUpdateQuantity = async (productId: string, quantity: number) => {
     try {
@@ -147,11 +187,11 @@ const Cart: React.FC = () => {
                     </div>
 
                     <div className="text-right">
-                      <div className={`font-bold text-sm text-foreground ${!isAuthenticated ? 'blur-[1px]' : ''}`}>
-                        {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                      <div className={!isAuthenticated ? 'blur-[1px]' : ''}>
+                        {getPriceText(item)}
                       </div>
                       <div className={`text-xs text-muted-foreground ${!isAuthenticated ? 'blur-[1px]' : ''}`}>
-                        {item.price.toLocaleString('ru-RU')} ₽/шт
+                        Итого: {(getItemPrice(item) * item.quantity).toLocaleString('ru-RU')} ₽
                       </div>
                     </div>
                   </div>

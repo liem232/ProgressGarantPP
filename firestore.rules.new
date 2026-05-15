@@ -62,9 +62,7 @@ service cloud.firestore {
         'lastName',
         'phone',
         'photoURL',
-        'address',
-        'isPartner',
-        'partnerApprovedAt'
+        'address'
       ]);
     }
 
@@ -155,7 +153,7 @@ service cloud.firestore {
     // Orders collection
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (
-        isManager() ||
+        isManager() || 
         resource.data.orderData.userId == request.auth.uid
       );
       allow create: if isAuthenticated() && isValidOrder();
@@ -164,23 +162,7 @@ service cloud.firestore {
       );
       allow delete: if isAdmin();
     }
-
-    // Partnership requests collection
-    match /partnershipRequests/{requestId} {
-      allow read: if isAuthenticated() && (
-        isAdmin() ||
-        resource.data.userId == request.auth.uid
-      );
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'status',
-        'adminComment',
-        'reviewedAt',
-        'reviewedBy'
-      ]);
-      allow delete: if isAdmin();
-    }
-
+    
     // Chat messages collection
     match /chatMessages/{messageId} {
       allow read, create, update, delete: if false;
@@ -208,12 +190,9 @@ service cloud.firestore {
 
     match /chatThreads/{threadId} {
       allow read: if isAdmin() || isManager() || isThreadDocParticipant() || isDeterministicThreadOwner(threadId);
-
       allow create: if isAuthenticated() && isValidThreadCreate(threadId);
-
       allow update: if isThreadDocParticipant() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
-
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
