@@ -167,3 +167,45 @@ export const getUserPartnershipRequest = async (userId: string): Promise<Partner
     return null;
   }
 };
+
+export const revokePartnership = async (
+  userId: string,
+  adminId: string,
+  adminComment?: string
+): Promise<boolean> => {
+  if (!isFirebaseConfigured || !db) {
+    console.warn('Firebase not configured, using fallback');
+    return false;
+  }
+
+  try {
+    // Убираем статус партнера у пользователя
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      isPartner: false,
+      partnerApprovedAt: null,
+    });
+
+    // Обновляем заявку на партнерство (если есть)
+    const q = query(
+      collection(db, 'partnershipRequests'),
+      where('userId', '==', userId),
+      where('status', '==', 'approved')
+    );
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      await updateDoc(doc.ref, {
+        status: 'rejected',
+        adminComment: adminComment || 'Партнерство разорвано администратором',
+        reviewedAt: Timestamp.now(),
+        reviewedBy: adminId,
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error revoking partnership:', error);
+    return false;
+  }
+};

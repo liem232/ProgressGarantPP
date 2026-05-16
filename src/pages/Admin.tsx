@@ -669,10 +669,6 @@ const Admin: React.FC = () => {
             <StockManagement />
           </TabsContent>
 
-          <TabsContent value="reports" className="mt-6">
-            <AdminReports />
-          </TabsContent>
-
         </Tabs>
 
         {/* Dialog подтверждения смены роли */}

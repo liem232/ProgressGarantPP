@@ -9,8 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { getPartnershipRequests, approvePartnershipRequest, rejectPartnershipRequest, PartnershipRequest } from '@/services/partnershipService';
-import { CheckCircle2, XCircle, Clock, Building2, User, Mail, Phone, MapPin, Briefcase } from 'lucide-react';
+import { getPartnershipRequests, approvePartnershipRequest, rejectPartnershipRequest, revokePartnership, PartnershipRequest } from '@/services/partnershipService';
+import { CheckCircle2, XCircle, Clock, Building2, User, Mail, Phone, MapPin, Briefcase, Ban } from 'lucide-react';
 
 const statusLabels: Record<PartnershipRequest['status'], string> = {
   pending: 'На рассмотрении',
@@ -30,7 +30,7 @@ const PartnershipRequests: React.FC = () => {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<PartnershipRequest['status'] | 'all'>('all');
   const [selectedRequest, setSelectedRequest] = useState<PartnershipRequest | null>(null);
-  const [dialogType, setDialogType] = useState<'approve' | 'reject' | null>(null);
+  const [dialogType, setDialogType] = useState<'approve' | 'reject' | 'revoke' | null>(null);
   const [adminComment, setAdminComment] = useState('');
 
   const { data: requests = [], isLoading, error } = useQuery<PartnershipRequest[]>({
@@ -117,7 +117,44 @@ const PartnershipRequests: React.FC = () => {
     }
   };
 
-  const openDialog = (request: PartnershipRequest, type: 'approve' | 'reject') => {
+  const handleRevoke = async () => {
+    if (!selectedRequest) return;
+
+    try {
+      const success = await revokePartnership(
+        selectedRequest.userId,
+        isAdmin ? 'admin' : 'unknown',
+        adminComment || undefined
+      );
+
+      if (success) {
+        toast({
+          title: 'Партнерство разорвано',
+          description: `Пользователь ${selectedRequest.userName} больше не является партнером`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['partnershipRequests'] });
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        setSelectedRequest(null);
+        setDialogType(null);
+        setAdminComment('');
+      } else {
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось разорвать партнерство',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error revoking partnership:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Произошла ошибка при разрыве партнерства',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const openDialog = (request: PartnershipRequest, type: 'approve' | 'reject' | 'revoke') => {
     setSelectedRequest(request);
     setDialogType(type);
     setAdminComment('');
@@ -243,6 +280,17 @@ const PartnershipRequests: React.FC = () => {
                             </Button>
                           </div>
                         )}
+
+                        {request.status === 'approved' && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => openDialog(request, 'revoke')}
+                          >
+                            <Ban className="h-4 w-4 mr-1" />
+                            Разорвать партнерство
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -320,12 +368,16 @@ const PartnershipRequests: React.FC = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {dialogType === 'approve' ? 'Одобрить заявку на партнерство' : 'Отклонить заявку на партнерство'}
+                {dialogType === 'approve' ? 'Одобрить заявку на партнерство' :
+                 dialogType === 'reject' ? 'Отклонить заявку на партнерство' :
+                 'Разорвать партнерство'}
               </DialogTitle>
               <DialogDescription>
                 {dialogType === 'approve'
                   ? `Вы уверены, что хотите одобрить заявку от ${selectedRequest?.companyName}? Пользователь получит статус партнера и доступ к оптовым ценам.`
-                  : `Вы уверены, что хотите отклонить заявку от ${selectedRequest?.companyName}?`}
+                  : dialogType === 'reject'
+                  ? `Вы уверены, что хотите отклонить заявку от ${selectedRequest?.companyName}?`
+                  : `Вы уверены, что хотите разорвать партнерство с ${selectedRequest?.companyName}? Пользователь потеряет статус партнера и доступ к оптовым ценам.`}
               </DialogDescription>
             </DialogHeader>
 
@@ -336,7 +388,9 @@ const PartnershipRequests: React.FC = () => {
                   id="adminComment"
                   value={adminComment}
                   onChange={(e) => setAdminComment(e.target.value)}
-                  placeholder={dialogType === 'approve' ? 'Укажите условия сотрудничества...' : 'Укажите причину отклонения...'}
+                  placeholder={dialogType === 'approve' ? 'Укажите условия сотрудничества...' :
+                            dialogType === 'reject' ? 'Укажите причину отклонения...' :
+                            'Укажите причину разрыва партнерства...'}
                   rows={3}
                 />
               </div>
@@ -348,9 +402,9 @@ const PartnershipRequests: React.FC = () => {
               </Button>
               <Button
                 variant={dialogType === 'approve' ? 'default' : 'destructive'}
-                onClick={dialogType === 'approve' ? handleApprove : handleReject}
+                onClick={dialogType === 'approve' ? handleApprove : dialogType === 'reject' ? handleReject : handleRevoke}
               >
-                {dialogType === 'approve' ? 'Одобрить' : 'Отклонить'}
+                {dialogType === 'approve' ? 'Одобрить' : dialogType === 'reject' ? 'Отклонить' : 'Разорвать'}
               </Button>
             </DialogFooter>
           </DialogContent>
