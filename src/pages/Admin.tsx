@@ -9,11 +9,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Users, Package, FileText, Clock, CheckCircle2, XCircle, Eye, Ban, ShieldCheck, Warehouse } from 'lucide-react';
+import { Shield, Users, Package, FileText, Clock, CheckCircle2, XCircle, Eye, Ban, ShieldCheck, Warehouse, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { seedProducts } from '@/services/seedService';
 import { isFirebaseConfigured } from '@/lib/firebase';
-import { getOrders, updateOrderStatus, Order } from '@/services/ordersService';
+import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/services/ordersService';
 import AdminProducts from '@/components/AdminProducts';
 import StockManagement from '@/pages/StockManagement';
 import AdminReports from '@/pages/AdminReports';
@@ -79,6 +79,7 @@ const Admin: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [roleConfirmDialog, setRoleConfirmDialog] = useState<{ userId: string; newRole: 'user' | 'manager' | 'admin' } | null>(null);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{ orderId: string; orderNumber: string } | null>(null);
 
   // Загрузка пользователей
   useEffect(() => {
@@ -156,14 +157,34 @@ const Admin: React.FC = () => {
       await updateOrderStatus(orderId, newStatus);
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast({
-        title: "Статус обновлен",
+        title: 'Статус обновлен',
         description: `Заказ №${orderId.slice(-6)} - ${statusLabels[newStatus]}`,
       });
     } catch (err: any) {
       toast({
-        title: "Ошибка",
-        description: err.message || "Не удалось обновить статус",
-        variant: "destructive",
+        title: 'Ошибка',
+        description: err?.message || 'Не удалось обновить статус',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!deleteConfirmDialog) return;
+
+    try {
+      await deleteOrder(deleteConfirmDialog.orderId);
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: 'Заказ удален',
+        description: `Заказ №${deleteConfirmDialog.orderNumber} успешно удален`,
+      });
+      setDeleteConfirmDialog(null);
+    } catch (err: any) {
+      toast({
+        title: 'Ошибка',
+        description: err?.message || 'Не удалось удалить заказ',
+        variant: 'destructive',
       });
     }
   };
@@ -440,7 +461,16 @@ const Admin: React.FC = () => {
                               onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                             >
                               <Eye className="h-4 w-4 sm:mr-2" />
-                              <span className="sm:hidden">Подробнее</span>
+                              <span className="hidden sm:inline">Подробнее</span>
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="w-full sm:w-auto"
+                              onClick={() => setDeleteConfirmDialog({ orderId: order.id, orderNumber: order.id.slice(-8) })}
+                            >
+                              <Trash2 className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Удалить</span>
                             </Button>
                           </div>
                         </div>
@@ -660,6 +690,28 @@ const Admin: React.FC = () => {
               </Button>
               <Button onClick={confirmRoleChange}>
                 Подтвердить
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog подтверждения удаления заказа */}
+        <Dialog open={!!deleteConfirmDialog} onOpenChange={(open) => !open && setDeleteConfirmDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Подтверждение удаления заказа</DialogTitle>
+              <DialogDescription>
+                Вы действительно хотите удалить заказ №{deleteConfirmDialog?.orderNumber}?
+                Если заказ был в обработке или выполнен, товары будут возвращены на склад.
+                Это действие нельзя отменить.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirmDialog(null)}>
+                Отмена
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteOrder}>
+                Удалить
               </Button>
             </DialogFooter>
           </DialogContent>

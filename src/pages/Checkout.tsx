@@ -145,7 +145,7 @@ const Checkout: React.FC = () => {
           email: orderData.email,
           phone: orderData.phone,
           city: 'Оренбург',
-          address: orderData.deliveryMethod === 'delivery' ? orderData.address : 'Самовывоз (пр-д Автоматики, 12)',
+          address: orderData.deliveryMethod === 'delivery' ? orderData.address : 'Самовывоз (ул. Диагностики, 7)',
           comment: orderData.comment,
           userId: user.id,
         },
@@ -298,7 +298,7 @@ const Checkout: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="pickup" id="pickup" />
-                        <Label htmlFor="pickup">Самовывоз (пр-д Автоматики, 12)</Label>
+                        <Label htmlFor="pickup">Самовывоз (ул. Диагностики, 7)</Label>
                       </div>
                     </RadioGroup>
 

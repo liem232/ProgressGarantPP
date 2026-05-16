@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  deleteDoc,
   Timestamp,
   DocumentData,
 } from 'firebase/firestore';
@@ -377,4 +378,29 @@ export const checkOrderLimit = async (userId?: string): Promise<{ allowed: boole
     // В случае ошибки разрешаем заказ (fail-open для UX)
     return { allowed: true, remaining: MAX_ORDERS_PER_DAY };
   }
+};
+
+export const deleteOrder = async (orderId: string): Promise<void> => {
+  // Получаем информацию о заказе
+  const order = await getOrderById(orderId);
+  if (!order) {
+    throw new Error('Заказ не найден');
+  }
+
+  // Если заказ был в обработке или выполнен, возвращаем товары на склад
+  if (order.status === 'processing' || order.status === 'completed') {
+    await updateStockForOrder(order.items, 1);
+  }
+
+  // Удаляем заказ
+  if (!isFirebaseConfigured || !db) {
+    // Fallback to localStorage
+    const orders = getLocalOrders();
+    const filteredOrders = orders.filter(o => o.id !== orderId);
+    saveLocalOrders(filteredOrders);
+    return;
+  }
+
+  const docRef = doc(db, COLLECTION_NAME, orderId);
+  await deleteDoc(docRef);
 };

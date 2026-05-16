@@ -301,7 +301,7 @@ const ManagerReports: React.FC = () => {
 
     toast({
       title: "Excel отчет создан",
-      description: `Файл ${fileName} сохранен с красивым форматированием`,
+      description: `Файл ${fileName} сохранен`,
     });
   };
 
