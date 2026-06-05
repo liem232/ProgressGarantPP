@@ -2,17 +2,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    function userDocPath(uid) {
-      return /databases/$(database)/documents/users/$(uid);
-    }
-
     function getUserRole(uid) {
-      return exists(userDocPath(uid)) ? get(userDocPath(uid)).data.role : null;
+      return exists(/databases/$(database)/documents/users/$(uid))
+        ? get(/databases/$(database)/documents/users/$(uid)).data.role
+        : null;
     }
     
     function isAdmin() {
@@ -26,7 +23,8 @@ service cloud.firestore {
       return isAuthenticated() && (
         getUserRole(request.auth.uid) == 'manager' ||
         getUserRole(request.auth.uid) == 'admin' ||
-        request.auth.token.email in ['manager@progressgarant.ru', 'admin@progressgarant.ru']
+        request.auth.token.email == 'manager@progressgarant.ru' ||
+        request.auth.token.email == 'admin@progressgarant.ru'
       );
     }
 
@@ -103,33 +101,46 @@ service cloud.firestore {
         && isValidThreadType(request.resource.data.type)
         && request.resource.data.participantIds is list
         && request.resource.data.participantIds.size() == 2
-        && request.resource.data.participantIds.hasAny([request.auth.uid])
         && (
-          (request.resource.data.type == 'user-manager' && threadId.matches('^' + request.auth.uid + '_.*$'))
+          (
+            request.resource.data.type == 'user-manager'
+            && request.resource.data.userId is string
+            && request.resource.data.participantIds.hasAny([request.resource.data.userId])
+            && threadId == 'um_' + request.resource.data.userId
+            && (
+              (
+                request.resource.data.userId == request.auth.uid
+                && request.resource.data.participantIds.hasAny([request.auth.uid])
+              )
+              ||
+              isAdmin()
+            )
+          )
           ||
-          (request.resource.data.type == 'staff' && threadId.matches('^staff_.*$') && (isAdmin() || isManager()))
+          (
+            request.resource.data.type == 'staff'
+            && request.resource.data.participantIds.hasAny([request.auth.uid])
+            && threadId.matches('^staff_.*$')
+            && (isAdmin() || isManager())
+          )
         );
     }
     
-    // Products collection
     match /products/{productId} {
       allow read: if true;
       allow create, update: if isAdmin() || (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity']));
       allow delete: if isAdmin();
     }
 
-    // Order Counter collection
     match /orderCounter/counter {
       allow read, write: if isAuthenticated();
     }
 
-    // Categories collection
     match /categories/{categoryId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
     
-    // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated() && (
         isOwner(userId) ||
@@ -146,13 +157,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // App config
     match /appConfig/{docId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin();
     }
     
-    // Orders collection
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (
         isManager() ||
@@ -160,12 +169,12 @@ service cloud.firestore {
       );
       allow create: if isAuthenticated() && isValidOrder();
       allow update: if isAuthenticated() && (
-        (isManager() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+        isManager() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
       );
       allow delete: if isAdmin();
     }
 
-    // Partnership requests collection
     match /partnershipRequests/{requestId} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
@@ -181,17 +190,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Chat messages collection
     match /chatMessages/{messageId} {
       allow read, create, update, delete: if false;
     }
 
     function isThreadDocParticipant() {
-      return isAuthenticated() && resource.data.participantIds.hasAny([request.auth.uid]);
+      return isAuthenticated()
+        && resource != null
+        && resource.data.participantIds.hasAny([request.auth.uid]);
     }
 
     function isDeterministicThreadOwner(threadId) {
-      return isAuthenticated() && threadId.matches('^' + request.auth.uid + '_.*$');
+      return isAuthenticated() && (
+        threadId == 'um_' + request.auth.uid ||
+        threadId.matches('^' + request.auth.uid + '_.*$')
+      );
     }
 
     function isThreadParticipant(threadId) {
@@ -199,34 +212,35 @@ service cloud.firestore {
         get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
     }
 
-    function isStaffThreadParticipantByThread(threadId) {
-      return isAuthenticated() &&
-        (isAdmin() || isManager()) &&
-        get(/databases/$(database)/documents/chatThreads/$(threadId)).data.type == 'staff' &&
-        get(/databases/$(database)/documents/chatThreads/$(threadId)).data.participantIds.hasAny([request.auth.uid]);
-    }
-
     match /chatThreads/{threadId} {
-      allow read: if isAdmin() || isManager() || isThreadDocParticipant() || isDeterministicThreadOwner(threadId);
+      allow read: if isAdmin() || isManager() || isDeterministicThreadOwner(threadId) || isThreadDocParticipant();
 
       allow create: if isAuthenticated() && isValidThreadCreate(threadId);
 
-      allow update: if isThreadDocParticipant() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
+      allow update: if (
+        isThreadDocParticipant() ||
+        (isAdmin() && resource.data.type == 'user-manager')
+      ) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'lastMessage']);
 
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
         allow read: if isThreadParticipant(threadId) || isAdmin() || isManager();
-        allow create: if isThreadParticipant(threadId)
+        allow create: if (
+          isThreadParticipant(threadId) ||
+          (isAdmin() && get(/databases/$(database)/documents/chatThreads/$(threadId)).data.type == 'user-manager')
+        )
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() <= 1000
           && (!('attachments' in request.resource.data) || isValidAttachmentsList(request.resource.data.attachments))
           && (
             request.resource.data.text.size() > 0 ||
-            ('attachments' in request.resource.data && request.resource.data.attachments is list && request.resource.data.attachments.size() > 0)
+            ('attachments' in request.resource.data &&
+             request.resource.data.attachments is list &&
+             request.resource.data.attachments.size() > 0)
           );
+
         allow update, delete: if isAdmin();
       }
     }

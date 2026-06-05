@@ -73,6 +73,12 @@ export interface ChatConfig {
   defaultManagerId: string | null;
 }
 
+export interface ChatDirectoryUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 const MESSAGES_COLLECTION = 'chatMessages';
 const ROOMS_COLLECTION = 'chatRooms';
 
@@ -325,7 +331,7 @@ export const uploadFile = async (
   }
 };
 
-export const getAvailableManagers = async (): Promise<{id: string, name: string, email: string}[]> => {
+export const getAvailableManagers = async (): Promise<ChatDirectoryUser[]> => {
   if (!isFirebaseConfigured || !db) {
     // Fallback для режима без Firebase
     return [];
@@ -335,7 +341,7 @@ export const getAvailableManagers = async (): Promise<{id: string, name: string,
     // Получаем пользователей с ролью manager или admin
     const managersQuery = query(
       collection(db, 'users'),
-      where('role', 'in', ['manager', 'admin'])
+      where('role', '==', 'manager')
     );
     
     const snapshot = await getDocs(managersQuery);
@@ -353,6 +359,85 @@ export const getAvailableManagers = async (): Promise<{id: string, name: string,
   }
 };
 
+export const getAvailableClients = async (): Promise<ChatDirectoryUser[]> => {
+  if (!isFirebaseConfigured || !db) {
+    return [];
+  }
+
+  try {
+    const clientsQuery = query(
+      collection(db, 'users'),
+      where('role', '==', 'user')
+    );
+
+    const snapshot = await getDocs(clientsQuery);
+    return snapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        name:
+          `${data.firstName || ''} ${data.lastName || ''}`.trim() ||
+          data.username ||
+          data.email ||
+          'Клиент',
+        email: data.email || '',
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching clients:', error);
+    return [];
+  }
+};
+
+export const getAvailableAdmins = async (): Promise<ChatDirectoryUser[]> => {
+  if (!isFirebaseConfigured || !db) {
+    return [];
+  }
+
+  try {
+    const adminsQuery = query(
+      collection(db, 'users'),
+      where('role', '==', 'admin')
+    );
+
+    const snapshot = await getDocs(adminsQuery);
+    return snapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        name:
+          `${data.firstName || ''} ${data.lastName || ''}`.trim() ||
+          data.username ||
+          'Администратор',
+        email: data.email || '',
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching admins:', error);
+    return [];
+  }
+};
+
+export const resolveSupportAgentId = async (excludeUserId?: string): Promise<string | null> => {
+  const cfg = await getChatConfig();
+  const managers = await getAvailableManagers();
+  if (cfg.defaultManagerId && cfg.defaultManagerId !== excludeUserId) {
+    const hasConfiguredManager = managers.some((manager) => manager.id === cfg.defaultManagerId);
+    if (hasConfiguredManager) {
+      return cfg.defaultManagerId;
+    }
+  }
+
+  if (managers.length === 0) {
+    return null;
+  }
+
+  const preferredManager =
+    managers.find((manager) => manager.id !== excludeUserId) || managers[0];
+
+  return preferredManager?.id || null;
+};
+
 const getThreadMessagesCollection = (threadId: string) => {
   if (!isFirebaseConfigured || !db) return null;
   return collection(db, THREADS_COLLECTION, threadId, 'messages');
@@ -366,9 +451,14 @@ export const getOrCreateUserManagerThread = async (
 ): Promise<ChatThread | null> => {
   if (!userId || !managerId) return null;
 
-  const deterministicThreadId = `${userId}_${managerId}`;
+  const deterministicThreadId = `um_${userId}`;
 
   if (!isFirebaseConfigured || !threadsCollection || !db) {
+    const existingByUser = localThreads.find(
+      (t) => t.type === 'user-manager' && t.userId === userId
+    );
+    if (existingByUser) return existingByUser;
+
     const existing = localThreads.find(
       (t) => t.type === 'user-manager' && t.userId === userId && t.participantIds.includes(managerId)
     );
@@ -389,8 +479,6 @@ export const getOrCreateUserManagerThread = async (
     return thread;
   }
 
-  // Avoid Firestore composite index requirements by using a deterministic doc id.
-  // This guarantees there is at most one thread per (userId, managerId).
   const threadRef = doc(db, THREADS_COLLECTION, deterministicThreadId);
   const existingSnap = await getDoc(threadRef);
   if (existingSnap.exists()) {
@@ -413,6 +501,30 @@ export const getOrCreateUserManagerThread = async (
 
     return {
       id: existingSnap.id,
+      type: data.type,
+      participantIds: data.participantIds || [],
+      userId: data.userId,
+      userName: typeof data.userName === 'string' ? data.userName : undefined,
+      userEmail: typeof data.userEmail === 'string' ? data.userEmail : undefined,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      lastMessage: data.lastMessage || undefined,
+    } as ChatThread;
+  }
+
+  const legacyThreadsQuery = query(
+    threadsCollection,
+    where('participantIds', 'array-contains', userId)
+  );
+  const legacyThreadsSnapshot = await getDocs(legacyThreadsQuery);
+  const legacyThreadDoc = legacyThreadsSnapshot.docs.find((docSnap) => {
+    const data = docSnap.data() as DocumentData;
+    return data.type === 'user-manager' && data.userId === userId;
+  });
+  if (legacyThreadDoc) {
+    const data = legacyThreadDoc.data() as DocumentData;
+    return {
+      id: legacyThreadDoc.id,
       type: data.type,
       participantIds: data.participantIds || [],
       userId: data.userId,
@@ -490,8 +602,8 @@ export const listUserManagerThreadsForStaff = async (participantId?: string): Pr
     return threads.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
   }
 
-  // Admin use-case: list all user-manager threads.
-  const q = query(threadsCollection, where('type', '==', 'user-manager'), orderBy('updatedAt', 'desc'));
+  // Admin use-case: list all user-manager threads without requiring a composite index.
+  const q = query(threadsCollection, where('type', '==', 'user-manager'));
   const snapshot = await getDocs(q);
   const threads = snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as DocumentData;
@@ -507,7 +619,7 @@ export const listUserManagerThreadsForStaff = async (participantId?: string): Pr
       lastMessage: data.lastMessage || undefined,
     } as ChatThread;
   });
-  return threads;
+  return threads.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
 };
 
 // Staff threads: admin <-> manager direct communication
@@ -517,8 +629,11 @@ export const getOrCreateStaffThread = async (
 ): Promise<ChatThread | null> => {
   if (!adminId || !managerId) return null;
 
-  const sortedIds = [adminId, managerId].sort();
-  const deterministicThreadId = `staff_${sortedIds[0]}_${sortedIds[1]}`;
+  const isSelfThread = adminId === managerId;
+  const sortedIds = isSelfThread ? [adminId, managerId] : [adminId, managerId].sort();
+  const deterministicThreadId = isSelfThread
+    ? `staff_self_${adminId}`
+    : `staff_${sortedIds[0]}_${sortedIds[1]}`;
 
   if (!isFirebaseConfigured || !threadsCollection || !db) {
     const existing = localThreads.find(

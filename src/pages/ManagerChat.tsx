@@ -14,7 +14,7 @@ import {
   ChatAttachment,
   listUserManagerThreadsForStaff,
   listStaffThreadsForStaff,
-  getAvailableManagers,
+  getAvailableAdmins,
   subscribeToThreadMessages,
   sendThreadMessage,
   ChatThread,
@@ -83,9 +83,9 @@ const ManagerChat: React.FC = () => {
       });
 
     // Resolve staff names (admins/managers) for display in staff threads
-    getAvailableManagers()
-      .then((staff) => {
-        setAdmins(staff);
+    getAvailableAdmins()
+      .then((availableAdmins) => {
+        setAdmins(availableAdmins);
       })
       .catch(() => {
         setAdmins([]);

@@ -18,7 +18,7 @@ import AdminProducts from '@/components/AdminProducts';
 import StockManagement from '@/pages/StockManagement';
 import AdminReports from '@/pages/AdminReports';
 import PartnershipRequests from '@/components/PartnershipRequests';
-import { getCollection, updateDoc, getDocById } from '@/services/firestoreService';
+import { createDoc, getCollection, updateDoc, getDocById } from '@/services/firestoreService';
 
 interface AdminUser {
   id: string;
@@ -222,6 +222,49 @@ const Admin: React.FC = () => {
     setRoleConfirmDialog({ userId, newRole });
   };
 
+  const syncDefaultManagerConfig = async (
+    changedUserId: string,
+    newRole: 'user' | 'manager' | 'admin'
+  ) => {
+    if (!isFirebaseConfigured) return;
+
+    const currentConfig = await getDocById('appConfig', 'chat') as { defaultManagerId?: string | null } | null;
+    const currentDefaultManagerId = currentConfig?.defaultManagerId ?? null;
+
+    const managerIdsAfterChange = users
+      .filter((user) => {
+        if (user.id === changedUserId) {
+          return newRole === 'manager';
+        }
+        return user.role === 'manager';
+      })
+      .map((user) => user.id);
+
+    let nextDefaultManagerId = currentDefaultManagerId;
+
+    if (managerIdsAfterChange.length === 0) {
+      nextDefaultManagerId = null;
+    } else if (!currentDefaultManagerId || !managerIdsAfterChange.includes(currentDefaultManagerId)) {
+      nextDefaultManagerId =
+        newRole === 'manager' && managerIdsAfterChange.includes(changedUserId)
+          ? changedUserId
+          : managerIdsAfterChange[0];
+    } else if (newRole !== 'manager' && currentDefaultManagerId === changedUserId) {
+      nextDefaultManagerId = managerIdsAfterChange[0] || null;
+    }
+
+    if (currentConfig) {
+      if (currentDefaultManagerId !== nextDefaultManagerId) {
+        await updateDoc('appConfig', 'chat', { defaultManagerId: nextDefaultManagerId });
+      }
+      return;
+    }
+
+    await createDoc('appConfig', 'chat', {
+      defaultManagerId: nextDefaultManagerId,
+    });
+  };
+
   const confirmRoleChange = async () => {
     if (!roleConfirmDialog) return;
     
@@ -229,6 +272,7 @@ const Admin: React.FC = () => {
     try {
       if (isFirebaseConfigured) {
         await updateDoc('users', userId, { role: newRole });
+        await syncDefaultManagerConfig(userId, newRole);
       } else {
         const savedUsers = JSON.parse(localStorage.getItem('progressgarant_users') || '[]');
         const updatedUsers = savedUsers.map((u: any) => 
