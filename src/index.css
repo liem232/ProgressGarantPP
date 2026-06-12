@@ -135,6 +135,22 @@
     box-shadow: 0 4px 12px -2px hsl(24 95% 53% / 0.4);
   }
 
+  .shadow-button {
+    box-shadow: 0 8px 18px -10px hsl(24 95% 53% / 0.5), 0 2px 6px hsl(24 95% 53% / 0.18);
+  }
+
+  .shadow-button-lg {
+    box-shadow: 0 16px 30px -12px hsl(24 95% 53% / 0.42), 0 8px 18px -10px hsl(24 95% 53% / 0.24);
+  }
+
+  .shadow-button-soft {
+    box-shadow: 0 12px 24px -16px hsl(24 95% 53% / 0.3), 0 4px 12px -10px hsl(220 10% 10% / 0.12);
+  }
+
+  .shadow-button-ghost {
+    box-shadow: 0 10px 22px -18px hsl(24 95% 53% / 0.28);
+  }
+
   /* Subtle hover lift */
   .hover-lift {
     transition: transform 0.2s ease, box-shadow 0.2s ease;

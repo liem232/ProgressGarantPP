@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,8 +26,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pencil, Trash2, Plus, Search } from 'lucide-react';
 import { getProducts, Product } from '@/services/productsService';
 import { getCategories, createCategory, deleteCategory, Category } from '@/services/categoriesService';
-import { db, isFirebaseConfigured } from '@/lib/firebase';
+import { db, isFirebaseConfigured, storage } from '@/lib/firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminProducts: React.FC = () => {
@@ -37,6 +38,10 @@ const AdminProducts: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
     price: 0,
@@ -76,6 +81,14 @@ const AdminProducts: React.FC = () => {
 
   const products = productsData as Product[];
 
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,9 +97,14 @@ const AdminProducts: React.FC = () => {
 
   const handleOpenDialog = (product?: Product) => {
     setNewCategoryName('');
+    setSelectedImageFile(null);
+    if (imagePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
     if (product) {
       setEditingProduct(product);
       setFormData(product);
+      setImagePreviewUrl(product.image || '');
     } else {
       setEditingProduct(null);
       setFormData({
@@ -104,8 +122,61 @@ const AdminProducts: React.FC = () => {
         strength: '',
         quantity: 0,
       });
+      setImagePreviewUrl('');
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
     setIsDialogOpen(true);
+  };
+
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Неверный формат',
+        description: 'Можно загружать только изображения',
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    const maxFileSize = 5 * 1024 * 1024;
+    if (file.size > maxFileSize) {
+      toast({
+        title: 'Файл слишком большой',
+        description: 'Максимальный размер изображения 5 МБ',
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    if (imagePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+
+    setSelectedImageFile(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleClearSelectedImage = () => {
+    if (imagePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+
+    setSelectedImageFile(null);
+    setImagePreviewUrl(editingProduct?.image || '');
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Функция для создания новой категории
@@ -113,6 +184,7 @@ const AdminProducts: React.FC = () => {
     if (!newCategoryName.trim()) return;
 
     try {
+      setIsSaving(true);
       const slug = newCategoryName
         .toLowerCase()
         .replace(/[^a-zа-яё0-9\s-]/g, '')
@@ -204,6 +276,19 @@ const AdminProducts: React.FC = () => {
       }
 
       const productId = editingProduct?.id || Date.now().toString();
+      let productImage = formData.image || '/img/placeholder.png';
+
+      if (selectedImageFile) {
+        if (!storage) {
+          throw new Error('Firebase Storage не настроен');
+        }
+
+        const safeFileName = selectedImageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const imageRef = ref(storage, `products/${productId}/${Date.now()}-${safeFileName}`);
+        await uploadBytes(imageRef, selectedImageFile);
+        productImage = await getDownloadURL(imageRef);
+      }
+
       const productData: Product = {
         id: productId,
         name: formData.name || '',
