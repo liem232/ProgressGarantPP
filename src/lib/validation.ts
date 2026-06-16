@@ -1,4 +1,17 @@
 import { z } from 'zod';
+import { isValidRussianPhone } from './utils';
+
+export const russianPhoneSchema = z
+  .string()
+  .trim()
+  .refine(isValidRussianPhone, 'Введите номер в формате +7 922 805 17 97');
+
+export const optionalRussianPhoneSchema = z
+  .string()
+  .trim()
+  .optional()
+  .or(z.literal(''))
+  .refine((value) => !value || isValidRussianPhone(value), 'Введите номер в формате +7 922 805 17 97');
 
 // Product validation schema
 export const productSchema = z.object({
@@ -27,14 +40,14 @@ export const orderItemSchema = z.object({
 });
 
 export const orderDataSchema = z.object({
-  firstName: z.string().min(2, 'Введите имя').max(50),
-  lastName: z.string().min(2, 'Введите фамилию').max(50),
-  email: z.string().email('Некорректный email'),
-  phone: z.string().min(10, 'Введите телефон полностью').regex(/^\+?[\d\s\-\(\)]+$/, 'Некорректный номер'),
+  firstName: z.string().trim().min(2, 'Введите имя').max(50),
+  lastName: z.string().trim().min(2, 'Введите фамилию').max(50),
+  email: z.string().trim().email('Некорректный email'),
+  phone: russianPhoneSchema,
   company: z.string().optional(),
   city: z.string().default('Оренбург'),
-  address: z.string().min(5, 'Введите адрес').max(200),
-  comment: z.string().max(500, 'Комментарий слишком длинный').optional(),
+  address: z.string().trim().min(5, 'Введите адрес').max(200),
+  comment: z.string().trim().max(500, 'Комментарий слишком длинный').optional(),
   userId: z.string().optional(),
 });
 
@@ -50,20 +63,47 @@ export type OrderInput = z.infer<typeof orderSchema>;
 
 // User registration schema
 export const registerSchema = z.object({
-  username: z.string().min(3, 'Логин минимум 3 символа').max(30, 'Логин слишком длинный'),
-  email: z.string().email('Некорректный email'),
+  username: z.string().trim().min(3, 'Логин минимум 3 символа').max(30, 'Логин слишком длинный'),
+  email: z.string().trim().email('Некорректный email'),
   password: z
     .string()
     .min(8, 'Пароль должен содержать минимум 8 символов')
     .max(100)
     .regex(/[A-ZА-ЯЁ]/, 'Пароль должен содержать хотя бы одну заглавную букву')
     .regex(/[a-zа-яё]/, 'Пароль должен содержать хотя бы одну строчную букву'),
-  firstName: z.string().max(50).optional(),
-  lastName: z.string().max(50).optional(),
-  phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/, 'Некорректный номер').optional().or(z.literal('')),
+  firstName: z.string().trim().max(50).optional(),
+  lastName: z.string().trim().max(50).optional(),
+  phone: optionalRussianPhoneSchema,
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+export const partnershipRequestSchema = z.object({
+  companyName: z
+    .string()
+    .trim()
+    .min(2, 'Введите название компании')
+    .max(100, 'Название компании слишком длинное')
+    .regex(/^[A-Za-zА-Яа-яЁё0-9\s"'().,\-№]+$/, 'Название компании содержит недопустимые символы'),
+  contactPerson: z
+    .string()
+    .trim()
+    .min(2, 'Введите контактное лицо')
+    .max(100, 'Имя контактного лица слишком длинное')
+    .regex(/^[A-Za-zА-Яа-яЁё\s\-]+$/, 'Укажите корректные ФИО контактного лица'),
+  phone: russianPhoneSchema,
+  email: z.string().trim().email('Некорректный email'),
+  address: z
+    .string()
+    .trim()
+    .max(200, 'Адрес слишком длинный')
+    .refine((value) => !value || value.length >= 5, 'Адрес должен содержать минимум 5 символов'),
+  businessType: z.enum(['', 'tobacco-shop', 'hookah-bar', 'convenience-store', 'gas-station', 'other']),
+  experience: z.enum(['', 'less-1', '1-3', '3-5', 'more-5']),
+  message: z.string().trim().max(1000, 'Сообщение слишком длинное'),
+});
+
+export type PartnershipRequestInput = z.infer<typeof partnershipRequestSchema>;
 
 // Login schema
 export const loginSchema = z.object({
@@ -79,13 +119,18 @@ export const chatMessageSchema = z.object({
   senderId: z.string(),
   senderName: z.string().min(1),
   senderRole: z.enum(['admin', 'user', 'manager']),
-  attachments: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    url: z.string().url(),
-    type: z.string(),
-    size: z.number().max(10 * 1024 * 1024, 'Файл слишком большой (макс 10MB)'),
-  })).max(5, 'Максимум 5 файлов').optional(),
+  attachments: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        url: z.string().url(),
+        type: z.string(),
+        size: z.number().max(10 * 1024 * 1024, 'Файл слишком большой (макс 10MB)'),
+      }),
+    )
+    .max(5, 'Максимум 5 файлов')
+    .optional(),
   orderId: z.string().optional(),
 });
 
@@ -93,11 +138,19 @@ export type ChatMessageInput = z.infer<typeof chatMessageSchema>;
 
 // File upload schema
 export const fileUploadSchema = z.object({
-  file: z.instanceof(File).refine(
-    (file) => file.size <= 10 * 1024 * 1024,
-    'Файл слишком большой (максимум 10MB)'
-  ).refine(
-    (file) => ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type),
-    'Неподдерживаемый формат файла'
-  ),
+  file: z
+    .instanceof(File)
+    .refine((file) => file.size <= 10 * 1024 * 1024, 'Файл слишком большой (максимум 10MB)')
+    .refine(
+      (file) =>
+        [
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ].includes(file.type),
+      'Неподдерживаемый формат файла',
+    ),
 });

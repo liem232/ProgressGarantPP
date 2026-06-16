@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createPartnershipRequest } from '@/services/partnershipService';
+import { partnershipRequestSchema } from '@/lib/validation';
+import { formatRussianPhone, RUSSIAN_PHONE_FORMATTED_LENGTH } from '@/lib/utils';
+
+const COMPANY_NAME_ALLOWED_CHARACTERS = /[^A-Za-zА-Яа-яЁё0-9\s"'().,\-№]/g;
+const CONTACT_PERSON_ALLOWED_CHARACTERS = /[^A-Za-zА-Яа-яЁё\s\-]/g;
 
 const Partners: React.FC = () => {
   const { user, isAuthenticated, isAdmin, isManager, isPartner } = useAuth();
@@ -41,16 +46,43 @@ const Partners: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      email: prev.email || user.email || '',
+      phone: prev.phone || formatRussianPhone(user.phone || ''),
+    }));
+  }, [user]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
+    let nextValue = value;
+
+    if (name === 'phone') {
+      nextValue = formatRussianPhone(value);
+    }
+
+    if (name === 'companyName') {
+      nextValue = value.replace(COMPANY_NAME_ALLOWED_CHARACTERS, '');
+    }
+
+    if (name === 'contactPerson') {
+      nextValue = value.replace(CONTACT_PERSON_ALLOWED_CHARACTERS, '');
+    }
+
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: nextValue
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
       if (!user?.id) {
@@ -63,17 +95,39 @@ const Partners: React.FC = () => {
         return;
       }
 
-      const requestId = await createPartnershipRequest({
-        userId: user.id,
-        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
-        userEmail: user.email,
-        userPhone: user.phone || formData.phone,
+      const parsed = partnershipRequestSchema.safeParse({
         companyName: formData.companyName,
         contactPerson: formData.contactPerson,
+        phone: formData.phone,
+        email: formData.email.trim(),
         address: formData.address,
         businessType: formData.businessType,
         experience: formData.experience,
         message: formData.message,
+      });
+
+      if (!parsed.success) {
+        toast({
+          title: "Проверьте форму",
+          description: parsed.error.issues[0]?.message || "Некорректные данные в заявке",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      const requestId = await createPartnershipRequest({
+        userId: user.id,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+        userEmail: parsed.data.email,
+        userPhone: parsed.data.phone,
+        companyName: parsed.data.companyName,
+        contactPerson: parsed.data.contactPerson,
+        address: parsed.data.address,
+        businessType: parsed.data.businessType,
+        experience: parsed.data.experience,
+        message: parsed.data.message,
       });
 
       if (requestId) {
@@ -86,8 +140,8 @@ const Partners: React.FC = () => {
         setFormData({
           companyName: '',
           contactPerson: '',
-          phone: '',
-          email: '',
+          phone: formatRussianPhone(user.phone || ''),
+          email: user.email || '',
           address: '',
           businessType: '',
           experience: '',
@@ -368,8 +422,8 @@ const Partners: React.FC = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       required
-                      maxLength={20}
-                      placeholder="+7 (999) 123-45-67"
+                      maxLength={RUSSIAN_PHONE_FORMATTED_LENGTH}
+                      placeholder="+7 922 805 17 97"
                     />
                   </div>
                   <div>

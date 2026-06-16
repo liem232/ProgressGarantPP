@@ -9,6 +9,7 @@ import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { registerSchema } from '@/lib/validation';
+import { formatRussianPhone, RUSSIAN_PHONE_FORMATTED_LENGTH } from '@/lib/utils';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -30,9 +31,11 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: name === 'phone' ? formatRussianPhone(value) : value
     }));
   };
 
@@ -172,8 +175,8 @@ const Register: React.FC = () => {
                 type="tel"
                 value={formData.phone}
                 onChange={handleChange}
-                maxLength={20}
-                placeholder="+7 (999) 123-45-67"
+                maxLength={RUSSIAN_PHONE_FORMATTED_LENGTH}
+                placeholder="+7 922 805 17 97"
               />
             </div>
             

@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { createOrder, checkOrderLimit } from '@/services/ordersService';
 import { orderSchema } from '@/lib/validation';
+import { formatRussianPhone, RUSSIAN_PHONE_FORMATTED_LENGTH } from '@/lib/utils';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 
 const Checkout: React.FC = () => {
@@ -58,7 +59,7 @@ const Checkout: React.FC = () => {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         email: user.email || '',
-        phone: user.phone || ''
+        phone: formatRussianPhone(user.phone || '')
       }));
     }
   }, [user]);
@@ -73,9 +74,11 @@ const Checkout: React.FC = () => {
   }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+
     setOrderData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: name === 'phone' ? formatRussianPhone(value) : value
     }));
   };
 
@@ -143,7 +146,7 @@ const Checkout: React.FC = () => {
           firstName: orderData.firstName,
           lastName: orderData.lastName,
           email: orderData.email,
-          phone: orderData.phone,
+          phone: orderData.phone.trim(),
           city: 'Оренбург',
           address: orderData.deliveryMethod === 'delivery' ? orderData.address : 'Самовывоз (ул. Диагностики, 7)',
           comment: orderData.comment,
@@ -255,13 +258,10 @@ const Checkout: React.FC = () => {
                           name="phone"
                           type="tel"
                           value={orderData.phone}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
-                            handleInputChange({ target: { name: 'phone', value } } as React.ChangeEvent<HTMLInputElement>);
-                          }}
+                          onChange={handleInputChange}
                           required
-                          maxLength={20}
-                          placeholder="+7 (999) 123-45-67"
+                          maxLength={RUSSIAN_PHONE_FORMATTED_LENGTH}
+                          placeholder="+7 922 805 17 97"
                         />
                       </div>
                       <div>

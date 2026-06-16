@@ -18,6 +18,7 @@ import {
   CreditCard, Truck, Camera, Edit
 } from 'lucide-react';
 import { getOrders, Order } from '@/services/ordersService';
+import { formatRussianPhone, isValidRussianPhone, RUSSIAN_PHONE_FORMATTED_LENGTH } from '@/lib/utils';
 
 const statusLabels = {
   pending: 'Ожидает обработки',
@@ -63,7 +64,7 @@ const Profile: React.FC = () => {
   const [editForm, setEditForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    phone: user?.phone || '',
+    phone: formatRussianPhone(user?.phone || ''),
     photoURL: user?.photoURL || ''
   });
 
@@ -93,10 +94,18 @@ const Profile: React.FC = () => {
       });
       return;
     }
-    if (editForm.phone && editForm.phone.length > 20) {
+    if (editForm.phone && editForm.phone.length > RUSSIAN_PHONE_FORMATTED_LENGTH) {
       toast({
         title: "Ошибка",
         description: "Телефон не должен превышать 20 символов",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (editForm.phone && !isValidRussianPhone(editForm.phone)) {
+      toast({
+        title: "РћС€РёР±РєР°",
+        description: "Введите номер в формате +7 922 805 17 97",
         variant: "destructive"
       });
       return;
@@ -112,10 +121,10 @@ const Profile: React.FC = () => {
 
     try {
       await updateUser({
-        firstName: editForm.firstName,
-        lastName: editForm.lastName,
-        phone: editForm.phone,
-        photoURL: editForm.photoURL
+        firstName: editForm.firstName.trim(),
+        lastName: editForm.lastName.trim(),
+        phone: editForm.phone.trim(),
+        photoURL: editForm.photoURL.trim()
       });
       
       setIsEditDialogOpen(false);
@@ -169,7 +178,7 @@ const Profile: React.FC = () => {
               setEditForm({
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
-                phone: user.phone || '',
+                phone: formatRussianPhone(user.phone || ''),
                 photoURL: user.photoURL || ''
               });
               setIsEditDialogOpen(true);
@@ -450,11 +459,10 @@ const Profile: React.FC = () => {
                   id="phone"
                   value={editForm.phone}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/[^0-9+\-\s()]/g, '');
-                    setEditForm({...editForm, phone: value});
+                    setEditForm({...editForm, phone: formatRussianPhone(e.target.value)});
                   }}
-                  maxLength={20}
-                  placeholder="+7 (999) 123-45-67"
+                  maxLength={RUSSIAN_PHONE_FORMATTED_LENGTH}
+                  placeholder="+7 922 805 17 97"
                 />
               </div>
               <div>
