@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import Layout from "./components/Layout";
 import ChatWidget from "./components/ChatWidget";
+import OrderStatusNotifier from "./components/OrderStatusNotifier";
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
 import Cart from "./pages/Cart";
@@ -48,6 +49,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <RouteScrollTop />
+              <OrderStatusNotifier />
               <Layout>
                 <Routes>
                   <Route path="/" element={<Index />} />
