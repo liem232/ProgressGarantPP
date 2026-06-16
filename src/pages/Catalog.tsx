@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getProducts } from '@/services/productsService';
 import { getCategories } from '@/services/categoriesService';
 
+const SEARCH_QUERY_MAX_LENGTH = 100;
+
 // Функция санитизации поискового запроса
 const sanitizeSearchQuery = (query: string): string => {
   // Удаляем потенциально опасные символы и HTML-теги
@@ -23,7 +25,7 @@ const sanitizeSearchQuery = (query: string): string => {
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Удаляем script теги
     .replace(/<\/?[^>]+(>|$)/g, '') // Удаляем все HTML теги
     .trim()
-    .slice(0, 100); // Ограничиваем длину до 100 символов
+    .slice(0, SEARCH_QUERY_MAX_LENGTH); // Ограничиваем длину до 100 символов
 };
 
 const Catalog: React.FC = () => {
@@ -192,6 +194,7 @@ const Catalog: React.FC = () => {
                 placeholder="Поиск товаров..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(sanitizeSearchQuery(e.target.value))}
+                maxLength={SEARCH_QUERY_MAX_LENGTH}
                 className="pl-10 h-9 text-sm"
               />
             </div>

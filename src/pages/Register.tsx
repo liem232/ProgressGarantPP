@@ -187,9 +187,9 @@ const Register: React.FC = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  minLength={6}
+                  minLength={8}
                   maxLength={100}
-                  placeholder="Минимум 6 символов"
+                  placeholder="Минимум 8 символов, заглавная и строчная буквы"
                 />
                 <Button
                   type="button"
@@ -217,7 +217,7 @@ const Register: React.FC = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  minLength={6}
+                  minLength={8}
                   maxLength={100}
                   placeholder="Повторите пароль"
                 />

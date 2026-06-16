@@ -36,6 +36,8 @@ interface HeaderProps {
   transparent?: boolean;
 }
 
+const SEARCH_QUERY_MAX_LENGTH = 100;
+
 const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -165,9 +167,9 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
                     onSubmit={(e) => {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
-                      const query = formData.get('search') as string;
+                      const query = ((formData.get('search') as string) || '').trim().slice(0, SEARCH_QUERY_MAX_LENGTH);
                       if (query.trim()) {
-                        navigate(`/catalog?search=${encodeURIComponent(query.trim())}`);
+                        navigate(`/catalog?search=${encodeURIComponent(query)}`);
                       }
                     }}
                     className="w-full"
@@ -175,6 +177,7 @@ const Header: React.FC<HeaderProps> = ({ transparent = false }) => {
                     <input
                       name="search"
                       type="text"
+                      maxLength={SEARCH_QUERY_MAX_LENGTH}
                       placeholder="Искать на ПрогрессГарант"
                       className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary border-none focus:ring-2 focus:ring-primary/20 text-sm"
                     />

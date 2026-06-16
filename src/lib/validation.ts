@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const productSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, 'Название должно быть минимум 2 символа').max(200, 'Название слишком длинное'),
-  price: z.number().min(0, 'Цена не может быть отрицательной').max(1000000, 'Цена слишком высока'),
+  price: z.number().min(0, 'Цена не может быть отрицательной').max(1000000, 'Цена слишком высокая'),
   category: z.string().min(1, 'Выберите категорию'),
   brand: z.string().optional(),
   description: z.string().max(1000, 'Описание слишком длинное').optional(),
@@ -52,7 +52,12 @@ export type OrderInput = z.infer<typeof orderSchema>;
 export const registerSchema = z.object({
   username: z.string().min(3, 'Логин минимум 3 символа').max(30, 'Логин слишком длинный'),
   email: z.string().email('Некорректный email'),
-  password: z.string().min(6, 'Пароль минимум 6 символов').max(100),
+  password: z
+    .string()
+    .min(8, 'Пароль должен содержать минимум 8 символов')
+    .max(100)
+    .regex(/[A-ZА-ЯЁ]/, 'Пароль должен содержать хотя бы одну заглавную букву')
+    .regex(/[a-zа-яё]/, 'Пароль должен содержать хотя бы одну строчную букву'),
   firstName: z.string().max(50).optional(),
   lastName: z.string().max(50).optional(),
   phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/, 'Некорректный номер').optional().or(z.literal('')),
